@@ -1,0 +1,25 @@
+// Built-in doodle stickers. Colours are theme tokens (INK, ACCENT, SOFT, PAPER, WARM) so they follow the palette.
+export interface Sticker { id: string; label: string; vbW: number; vbH: number; svg: string }
+
+const S = (id: string, label: string, svg: string, vbW = 100, vbH = 100): Sticker => ({ id, label, svg, vbW, vbH });
+
+export const STICKERS: Sticker[] = [
+  S("heart", "Heart", `<path d="M50 85 C10 60 8 30 28 20 C40 14 48 22 50 32 C52 22 60 14 72 20 C92 30 90 60 50 85 Z" fill="ACCENT" stroke="INK" stroke-width="5" stroke-linejoin="round"/>`),
+  S("star", "Star", `<path d="M50 8 L61 38 L93 39 L67 58 L77 90 L50 71 L23 90 L33 58 L7 39 L39 38 Z" fill="WARM" stroke="INK" stroke-width="5" stroke-linejoin="round"/>`),
+  S("sparkle", "Sparkle", `<path d="M50 6 Q55 45 94 50 Q55 55 50 94 Q45 55 6 50 Q45 45 50 6 Z" fill="SOFT" stroke="INK" stroke-width="4" stroke-linejoin="round"/><path d="M84 12 L84 28 M76 20 L92 20" stroke="ACCENT" stroke-width="4" stroke-linecap="round"/>`),
+  S("anger", "Anger mark", `<g fill="none" stroke="ACCENT" stroke-width="9" stroke-linecap="round"><path d="M20 40 Q40 42 40 20"/><path d="M60 20 Q60 42 80 40"/><path d="M80 60 Q60 58 60 80"/><path d="M40 80 Q40 58 20 60"/></g>`),
+  S("sweat", "Sweat drop", `<path d="M50 8 Q80 55 72 72 Q62 92 42 88 Q24 82 28 62 Q32 44 50 8 Z" fill="SOFT" stroke="INK" stroke-width="5" stroke-linejoin="round"/><path d="M40 66 Q40 76 48 78" fill="none" stroke="PAPER" stroke-width="5" stroke-linecap="round"/>`),
+  S("zzz", "Zzz", `<g fill="none" stroke="INK" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"><path d="M10 60 L40 60 L10 92 L40 92"/><path d="M48 32 L70 32 L48 56 L70 56"/><path d="M76 8 L92 8 L76 26 L92 26"/></g>`),
+  S("music", "Music notes", `<g stroke="INK" stroke-width="5" stroke-linecap="round" fill="ACCENT"><path d="M30 75 L30 25 L80 15 L80 65" fill="none"/><path d="M30 25 L80 15" stroke-width="10"/><ellipse cx="22" cy="76" rx="12" ry="9"/><ellipse cx="72" cy="66" rx="12" ry="9"/></g>`),
+  S("bulb", "Idea bulb", `<path d="M50 10 C28 10 18 30 26 48 C30 58 38 62 38 72 L62 72 C62 62 70 58 74 48 C82 30 72 10 50 10 Z" fill="WARM" stroke="INK" stroke-width="5" stroke-linejoin="round"/><path d="M40 80 L60 80 M42 88 L58 88" stroke="INK" stroke-width="5" stroke-linecap="round"/><path d="M8 30 L16 34 M92 30 L84 34 M50 0 L50 4" stroke="ACCENT" stroke-width="4" stroke-linecap="round"/>`),
+  S("exclaim", "!!", `<g fill="ACCENT" stroke="INK" stroke-width="4" stroke-linejoin="round"><path d="M22 10 L42 10 L37 62 L27 62 Z"/><circle cx="32" cy="80" r="8"/><path d="M58 10 L78 10 L73 62 L63 62 Z"/><circle cx="68" cy="80" r="8"/></g>`),
+  S("question", "?", `<path d="M30 32 Q30 10 52 10 Q74 10 74 30 Q74 44 56 52 L56 64" fill="none" stroke="INK" stroke-width="10" stroke-linecap="round"/><circle cx="56" cy="84" r="7" fill="INK"/>`),
+  S("motion", "Motion lines", `<g stroke="INK" stroke-width="5" stroke-linecap="round"><path d="M10 25 L90 25"/><path d="M25 50 L95 50"/><path d="M5 75 L80 75"/></g>`, 100, 100),
+  S("arrow", "Arrow", `<path d="M10 70 Q40 20 82 30" fill="none" stroke="INK" stroke-width="6" stroke-linecap="round"/><path d="M66 18 L84 30 L66 44" fill="none" stroke="INK" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`),
+  S("jalebi", "Jalebi", `<path d="M50 50 m-4 0 a4 4 0 1 1 8 0 a10 10 0 1 1 -20 0 a16 16 0 1 1 32 0 a22 22 0 1 1 -44 0 a28 28 0 1 1 56 0 a34 34 0 1 1 -68 0" fill="none" stroke="WARM" stroke-width="10" stroke-linecap="round"/><path d="M50 50 m-4 0 a4 4 0 1 1 8 0 a10 10 0 1 1 -20 0 a16 16 0 1 1 32 0 a22 22 0 1 1 -44 0 a28 28 0 1 1 56 0 a34 34 0 1 1 -68 0" fill="none" stroke="INK" stroke-width="2.5"/>`),
+  S("chappal", "Chappal", `<path d="M14 54 Q14 18 50 16 L140 20 Q170 24 168 46 Q164 72 130 74 L48 78 Q14 80 14 54 Z" fill="WARM" stroke="INK" stroke-width="5"/><path d="M60 26 Q85 52 110 26" fill="none" stroke="INK" stroke-width="7" stroke-linecap="round"/>`, 180, 92),
+  S("marble", "Marble", `<circle cx="50" cy="50" r="36" fill="SOFT" stroke="INK" stroke-width="5"/><path d="M30 40 Q50 30 60 55 Q66 70 78 62" fill="none" stroke="ACCENT" stroke-width="6" stroke-linecap="round"/><circle cx="38" cy="34" r="6" fill="PAPER"/>`),
+  S("phone", "Phone", `<rect x="28" y="8" width="44" height="84" rx="8" fill="SOFT" stroke="INK" stroke-width="5"/><rect x="34" y="18" width="32" height="56" rx="3" fill="PAPER" stroke="INK" stroke-width="3"/><circle cx="50" cy="83" r="4" fill="INK"/>`),
+  S("cake", "Cake", `<rect x="18" y="48" width="64" height="40" rx="6" fill="SOFT" stroke="INK" stroke-width="5"/><path d="M18 60 Q26 68 34 60 Q42 68 50 60 Q58 68 66 60 Q74 68 82 60" fill="none" stroke="ACCENT" stroke-width="5"/><path d="M50 48 L50 26" stroke="INK" stroke-width="5"/><path d="M50 12 Q58 22 50 26 Q42 22 50 12 Z" fill="WARM" stroke="INK" stroke-width="3"/>`),
+  S("speedbump", "Crack", `<path d="M10 50 L30 42 L40 58 L56 36 L66 60 L80 44 L92 52" fill="none" stroke="INK" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><path d="M40 58 L36 80 M66 60 L72 82" stroke="INK" stroke-width="4" stroke-linecap="round"/>`),
+];

@@ -1,0 +1,18 @@
+# One-click setup for Render (free plan). Books, accounts and images are stored in the
+# Postgres database given by DATABASE_URL (e.g. a free Neon database), because free
+# Render disks are wiped on every restart.
+services:
+  - type: web
+    name: inkspill
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/status
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: INKSPILL_OWNER
+        sync: false
+      - key: AI_DAILY_LIMIT
+        value: "25"

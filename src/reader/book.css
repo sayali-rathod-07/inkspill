@@ -1,0 +1,120 @@
+/* Book page typography — shared by the reader, live preview, print layout and EPUB export. */
+.book-page {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  --pink: #7c4dcc;
+  color: var(--page-ink, #2b2140);
+  background: var(--page-bg, #f6f0fb);
+  font-family: "Literata", Georgia, serif;
+}
+.book-page *, .book-page-measure * { box-sizing: border-box; }
+.book-page.empty { background: transparent; box-shadow: none; }
+
+.paper-lavender { --page-bg: #f3edfa; --page-ink: #2b2140; --page-accent: #7c4dcc; --page-fiber: #b9a6dc; }
+.paper-cream { --page-bg: #f8f1e1; --page-ink: #2c241b; --page-accent: #9a5b2f; --page-fiber: #d8c8a6; }
+.paper-newsprint { --page-bg: #ecebe6; --page-ink: #232323; --page-accent: #444; --page-fiber: #b9b8b0; }
+.paper-parchment { --page-bg: #efe0bf; --page-ink: #3a2c1a; --page-accent: #8a4b1c; --page-fiber: #c9ad78; }
+
+.paper-grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.55; mix-blend-mode: multiply;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.4 0 0 0 0 0.35 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.35), transparent 60%);
+}
+.paper-parchment .paper-grain { opacity: 0.9; background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.3 0 0 0 0 0.12 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at center, transparent 55%, rgba(120, 80, 30, 0.22)); }
+.paper-newsprint .paper-grain { opacity: 0.8; }
+
+.gutter-shade { position: absolute; top: 0; bottom: 0; width: 46px; pointer-events: none; }
+.gutter-shade.left { right: 0; background: linear-gradient(to left, rgba(40, 20, 60, 0.18), rgba(40, 20, 60, 0.05) 35%, transparent); }
+.gutter-shade.right { left: 0; background: linear-gradient(to right, rgba(40, 20, 60, 0.2), rgba(40, 20, 60, 0.05) 35%, transparent); }
+
+/* Body text */
+.bp-content { font-size: 13.6px; line-height: 1.58; hyphens: auto; -webkit-hyphens: auto; text-rendering: optimizeLegibility; font-kerning: normal; font-variant-ligatures: common-ligatures; }
+.bp-p { margin: 0; text-align: justify; text-indent: 1.4em; orphans: 2; widows: 2; }
+.bp-p.cont, .bp-head + .bp-p, .bp-scene + .bp-p, .bp-fig + .bp-p { text-indent: 0; }
+.bp-p.drop { text-indent: 0; }
+.bp-p.drop::first-letter {
+  float: left; font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 4.1em; line-height: 0.82;
+  margin: 0.08em 0.1em 0 0; color: var(--page-accent);
+}
+.bp-head { margin: 4px 0 18px; text-align: left; }
+.bp-head .n, .bp-opener .n { font-family: "Baloo 2", sans-serif; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; font-size: 12px; color: var(--page-accent); }
+.bp-head h2 { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 25px; line-height: 1.08; margin: 2px 0 0; }
+.cn { font-family: "Literata", serif; font-style: italic; font-size: 11px; opacity: 0.75; margin: 6px 0 0; }
+
+.bp-fig { margin: 10px 0 12px; padding: 0; }
+.bp-fig > div, .bp-fig > button { display: block; width: 100%; border: 0; padding: 0; background: none; cursor: zoom-in; }
+.bp-fig svg { display: block; width: 100%; height: 100%; }
+.bp-fig figcaption, .scroll-fig figcaption { font-family: "Patrick Hand", cursive; font-size: 15px; text-align: center; margin-top: 4px; line-height: 1.2; color: var(--page-accent); }
+
+.bp-scene { text-align: center; margin: 14px 0 10px; font-family: "Baloo 2", sans-serif; font-weight: 600; font-size: 13px; color: var(--page-accent); }
+.bp-scene span::before, .bp-scene span::after { content: " ✦ "; opacity: 0.7; }
+.bp-note {
+  font-family: "Patrick Hand", cursive; font-size: 15px; line-height: 1.3; margin: 10px 4px 12px; padding: 8px 12px;
+  background: rgba(255, 236, 140, 0.55); border-left: 3px solid var(--page-accent); transform: rotate(-0.6deg);
+}
+.bp-audio { display: flex; gap: 10px; align-items: center; margin: 10px 0 12px; height: 46px; padding: 6px 12px; border: 2px dashed var(--page-accent); border-radius: 12px; font-family: "Patrick Hand", cursive; font-size: 15px; overflow: hidden; }
+.bp-audio > span { font-size: 22px; color: var(--page-accent); }
+.bp-audio a { color: var(--page-accent); font-weight: bold; }
+.bp-audio audio { height: 26px; max-width: 200px; display: block; }
+
+.running-head { position: absolute; font-family: "Baloo 2", sans-serif; font-weight: 600; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-left .running-head { text-align: left; }
+.side-right .running-head { text-align: right; }
+.folio { position: absolute; font-family: "Baloo 2", sans-serif; font-weight: 600; font-size: 11px; opacity: 0.7; }
+.bp-opener .folio { bottom: 26px; left: 0; right: 0; text-align: center; }
+
+/* Special pages */
+.bp-cover { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(160deg, #b99ae8, #8a63cf 60%, #6c47b5); color: #fff; }
+.bp-cover .cover-title { padding: 34px 30px 0; text-align: center; }
+.bp-cover h1 { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 40px; line-height: 0.98; margin: 0; color: #fff; text-shadow: 3px 3px 0 #3a2763, -1px -1px 0 #3a2763, 1px -1px 0 #3a2763, -1px 1px 0 #3a2763; }
+.bp-cover h3 { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 20px; margin: 10px 0 0; color: #fff6c9; }
+.bp-cover .cover-art { width: 92%; margin: 0 auto; display: block; border-radius: 10px; box-shadow: 0 8px 24px rgba(30, 10, 60, 0.35); border: 4px solid #fff; background: #fff; }
+.bp-cover .cover-author { text-align: center; font-family: "Baloo 2", sans-serif; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; font-size: 15px; padding-bottom: 34px; }
+.paper-cream .bp-cover { background: linear-gradient(160deg, #f1c27d, #d9863f); }
+.paper-newsprint .bp-cover { background: linear-gradient(160deg, #6b6b6b, #2f2f2f); }
+.paper-parchment .bp-cover { background: linear-gradient(160deg, #a8743f, #6e4520); }
+
+.bp-titlepage, .bp-dedication, .bp-part, .bp-end, .bp-toc, .bp-cast, .bp-opener { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.bp-titlepage { justify-content: center; align-items: center; text-align: center; }
+.bp-titlepage h1 { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 34px; line-height: 1; margin: 0; }
+.bp-titlepage h3 { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 18px; margin: 10px 0 0; color: var(--page-accent); }
+.bp-titlepage .squiggle { width: 120px; height: 16px; margin: 26px auto; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 16'%3E%3Cpath d='M2 8 Q12 0 22 8 T42 8 T62 8 T82 8 T102 8 T118 8' fill='none' stroke='%237c4dcc' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat; }
+.bp-titlepage .by { font-family: "Baloo 2", sans-serif; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; font-size: 13px; }
+.bp-dedication { justify-content: center; text-align: center; font-style: italic; font-size: 15px; line-height: 1.6; }
+.bp-part { justify-content: center; align-items: center; text-align: center; }
+.bp-part h2 { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 28px; line-height: 1.1; margin: 14px 0; }
+.bp-part .orn { color: var(--page-accent); font-size: 22px; }
+.bp-end { justify-content: center; align-items: center; }
+.bp-end p { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 32px; margin: 0; }
+.bp-end span { font-family: "Patrick Hand", cursive; font-size: 20px; color: var(--page-accent); }
+
+.bp-toc h2, .bp-cast h2 { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 28px; margin: 0 0 16px; }
+.bp-toc ol { list-style: none; margin: 0; padding: 0; }
+.bp-toc li button { all: unset; display: flex; align-items: baseline; gap: 8px; width: 100%; padding: 5px 0; cursor: pointer; font-size: 13px; line-height: 1.3; }
+.bp-toc li button:hover .t { color: var(--page-accent); }
+.bp-toc .n { font-family: "Baloo 2", sans-serif; font-weight: 800; color: var(--page-accent); width: 18px; flex: none; }
+.bp-toc .t { flex: 0 1 auto; }
+.bp-toc .dots { flex: 1 1 20px; border-bottom: 2px dotted currentColor; opacity: 0.35; transform: translateY(-4px); min-width: 20px; }
+.bp-toc .pg { font-family: "Baloo 2", sans-serif; font-weight: 600; }
+.bp-toc .toc-part { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.65; margin: 14px 0 2px; }
+
+.bp-cast { cursor: default; }
+.bp-cast section { margin-bottom: 10px; }
+.bp-cast h4 { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 13px; margin: 0 0 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+.cast-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 6px; }
+.cast-cell { display: flex; flex-direction: column; align-items: center; text-align: center; font-size: 10px; line-height: 1.15; }
+.cast-cell b { font-family: "Patrick Hand", cursive; font-size: 14px; font-weight: 400; }
+.cast-cell span { opacity: 0.7; font-size: 9px; }
+.cast-links { font-family: "Patrick Hand", cursive; font-size: 12.5px; line-height: 1.3; margin: 8px 0 0; opacity: 0.85; }
+.bp-cast .tap { font-family: "Patrick Hand", cursive; color: var(--page-accent); margin-top: auto; text-align: center; font-size: 13px; }
+
+.bp-opener { align-items: center; text-align: center; padding-top: 70px !important; }
+.bp-opener h2 { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 27px; line-height: 1.08; margin: 6px 0 22px; }
+.bp-opener .opener-art { all: unset; display: block; width: 100%; cursor: zoom-in; border-radius: 8px; overflow: hidden; box-shadow: 0 3px 14px rgba(40, 20, 70, 0.18); }
+.bp-opener .opener-art svg { display: block; width: 100%; height: auto; }
+.bp-opener .cn { margin-top: 16px; }
+.bp-p.drop + .bp-p { clear: left; }

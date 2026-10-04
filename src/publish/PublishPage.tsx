@@ -1,0 +1,229 @@
+import { useEffect, useMemo, useState } from "react";
+import type { PaperId, ReaderComment, ShareInfo, ThemeId, TrimId } from "../types.ts";
+import { useStore } from "../store.ts";
+import { usePagination } from "../reader/Reader.tsx";
+import { TRIMS, pageGeometry } from "../reader/paginate.ts";
+import { PAPERS, THEME_LIST } from "../doodle/theme.ts";
+import { api } from "../lib/api.ts";
+import { download } from "../lib/fonts.ts";
+import { buildEpub } from "./epub.ts";
+import { bookWords, timeAgo } from "../lib/util.ts";
+
+const PAPER_STOCK = {
+  white: { label: "White paper (B&W interior)", inPerPage: 0.002252 },
+  cream: { label: "Cream paper (B&W interior)", inPerPage: 0.0025 },
+  color: { label: "Premium colour interior", inPerPage: 0.002347 },
+};
+
+export function PublishPage() {
+  const book = useStore((s) => s.book)!;
+  const update = useStore((s) => s.update);
+  const flush = useStore((s) => s.flush);
+  const pag = usePagination(book);
+  const [stock, setStock] = useState<keyof typeof PAPER_STOCK>("color");
+  const [bleed, setBleed] = useState(true);
+  const [marks, setMarks] = useState(false);
+  const [epubMsg, setEpubMsg] = useState<string | null>(null);
+  const [lowRes, setLowRes] = useState<{ title: string; dpi: number }[] | null>(null);
+
+  const pageCount = pag?.pages.length ?? 0;
+  const printPages = pageCount + (pageCount % 2);
+  const spine = printPages * PAPER_STOCK[stock].inPerPage;
+  const t = TRIMS[book.trim];
+
+  // Check that uploaded images are sharp enough for print (≥ 300 DPI at their printed width).
+  useEffect(() => {
+    let alive = true;
+    const { CW } = pageGeometry(book.trim);
+    const printedIn = CW / 80;
+    const checks = Object.values(book.doodles).flatMap((d) =>
+      d.elements.filter((e) => e.type === "image").map(async (e) => {
+        if (e.type !== "image") return null;
+        const img = new Image();
+        img.src = e.src;
+        await img.decode().catch(() => null);
+        if (!img.naturalWidth) return null;
+        const fraction = e.w / d.width;
+        const dpi = Math.round(img.naturalWidth / (printedIn * fraction));
+        return dpi < 300 ? { title: d.title, dpi } : null;
+      }),
+    );
+    Promise.all(checks).then((r) => alive && setLowRes(r.filter(Boolean) as { title: string; dpi: number }[]));
+    return () => { alive = false; };
+  }, [book.doodles, book.trim]);
+
+  const epub = async () => {
+    try {
+      const blob = await buildEpub(book, setEpubMsg);
+      download(blob, `${book.title.replace(/[^\w-]+/g, "-")}.epub`);
+      setEpubMsg("Done ✓");
+    } catch (e) {
+      setEpubMsg("Failed: " + (e as Error).message);
+    }
+  };
+
+  return (
+    <div className="publish">
+      <VisibilityCard />
+
+      <section className="pub-card">
+        <h3>📕 Book details</h3>
+        <div className="row2">
+          <label>Title<input value={book.title} onChange={(e) => update((b) => { b.title = e.target.value; })} /></label>
+          <label>Author<input value={book.author} onChange={(e) => update((b) => { b.author = e.target.value; })} /></label>
+        </div>
+        <label>Subtitle<input value={book.subtitle} onChange={(e) => update((b) => { b.subtitle = e.target.value; })} /></label>
+        <label>Dedication <span className="muted small">(optional page in the front matter)</span><textarea rows={2} value={book.dedication} onChange={(e) => update((b) => { b.dedication = e.target.value; })} /></label>
+        <div className="row3">
+          <label>Doodle style<select value={book.theme} onChange={(e) => update((b) => { b.theme = e.target.value as ThemeId; })}>{THEME_LIST.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <label>Paper<select value={book.paper} onChange={(e) => update((b) => { b.paper = e.target.value as PaperId; })}>{Object.values(PAPERS).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+          <label>Trim size<select value={book.trim} onChange={(e) => update((b) => { b.trim = e.target.value as TrimId; })}>{Object.entries(TRIMS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></label>
+        </div>
+        <label>Cover art<select value={book.coverDoodleId ?? ""} onChange={(e) => update((b) => { b.coverDoodleId = e.target.value || undefined; })}>
+          <option value="">None</option>
+          {Object.values(book.doodles).map((d) => <option key={d.id} value={d.id}>{d.title}</option>)}
+        </select></label>
+        <p className="muted small">New doodles use the book's style; each doodle can override it in the Studio.</p>
+      </section>
+
+      <section className="pub-card">
+        <h3>🖨 Print-on-demand PDF</h3>
+        <div className="stats">
+          <div><b>{pag ? pageCount : "…"}</b><span>pages</span></div>
+          <div><b>{bookWords(book).toLocaleString()}</b><span>words</span></div>
+          <div><b>{spine.toFixed(3)}"</b><span>spine width</span></div>
+          <div><b>{(t.w * 2 + spine + (bleed ? 0.25 : 0)).toFixed(3)}" × {(t.h + (bleed ? 0.25 : 0)).toFixed(3)}"</b><span>full cover size</span></div>
+        </div>
+        <label>Interior stock (for spine maths)
+          <select value={stock} onChange={(e) => setStock(e.target.value as keyof typeof PAPER_STOCK)}>{Object.entries(PAPER_STOCK).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>
+        </label>
+        <label className="row"><input type="checkbox" checked={bleed} onChange={(e) => setBleed(e.target.checked)} /> Add 0.125" bleed (needed when art runs to the edge, e.g. the cover)</label>
+        <label className="row"><input type="checkbox" checked={marks} onChange={(e) => setMarks(e.target.checked)} /> Show trim marks (proofing only — don't upload with marks)</label>
+        <button className="primary big" onClick={async () => { await flush(); window.open(`/print/${book.id}?bleed=${bleed ? 1 : 0}&marks=${marks ? 1 : 0}`, "_blank"); }}>Open print layout → Save as PDF</button>
+        <ul className="pub-notes">
+          <li>All doodles and text are <b>vector</b>, so they print razor-sharp at any DPI.</li>
+          <li>{lowRes === null ? "Checking image resolution…" : lowRes.length ? <>⚠️ Low-resolution images (aim for 300 DPI): {lowRes.map((r) => `${r.title} (${r.dpi} DPI)`).join(", ")}</> : "✓ All uploaded images are 300 DPI or better at print size."}</li>
+          <li>The PDF is RGB. Amazon KDP and IngramSpark accept RGB and convert it to CMYK themselves. If a printer insists on CMYK, convert the PDF in Acrobat (Print Production → Convert Colors) — browsers can't produce CMYK.</li>
+          <li>Use Chrome's print dialog: Destination “Save as PDF”, Margins “None”, and tick “Background graphics”.</li>
+        </ul>
+      </section>
+
+      <section className="pub-card">
+        <h3>📱 EPUB 3 (fixed layout)</h3>
+        <p>Keeps every page exactly as designed, with doodles as crisp vectors and fonts embedded. Works in Apple Books, Kobo and Kindle (via Kindle Create / KDP upload).</p>
+        <button className="primary" disabled={!!epubMsg && !/Done|Failed/.test(epubMsg)} onClick={() => void epub()}>⤓ Download .epub</button>
+        {epubMsg && <span className="small"> {epubMsg}</span>}
+      </section>
+
+      <WebShare />
+    </div>
+  );
+}
+
+function VisibilityCard() {
+  const book = useStore((s) => s.book)!;
+  const update = useStore((s) => s.update);
+  const [copied, setCopied] = useState(false);
+  const isPublic = (book.visibility ?? "public") === "public";
+  const url = `${location.origin}/read/${book.id}`;
+  return (
+    <section className="pub-card vis-card">
+      <h3>🌍 Who can read this book</h3>
+      <div className="seg">
+        <button className={isPublic ? "on" : ""} onClick={() => update((b) => { b.visibility = "public"; })}>🌍 Public — in the library</button>
+        <button className={!isPublic ? "on" : ""} onClick={() => update((b) => { b.visibility = "private"; })}>🔒 Private — only me</button>
+      </div>
+      <p>{isPublic ? "Anyone can find this book in the library and read every chapter. Only you can edit it." : "Hidden from the library. You can still share chosen chapters with a private (optionally password-protected) link below."}</p>
+      {isPublic && (
+        <div className="share-box">
+          <input readOnly value={url} onFocus={(e) => e.target.select()} />
+          <button onClick={() => { void navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? "Copied ✓" : "Copy link"}</button>
+          <a className="button" href={url} target="_blank" rel="noreferrer">Open ↗</a>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function WebShare() {
+  const book = useStore((s) => s.book)!;
+  const flush = useStore((s) => s.flush);
+  const [share, setShare] = useState<ShareInfo | null>(null);
+  const [comments, setComments] = useState<ReaderComment[]>([]);
+  const [chosen, setChosen] = useState<string[]>([]);
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const url = share ? `${location.origin}/r/${share.slug}` : "";
+
+  useEffect(() => {
+    api.share(book.id).then((r) => {
+      setShare(r.share);
+      setComments(r.comments);
+      setChosen(r.share?.chapterIds ?? book.chapters.slice(0, 1).map((c) => c.id));
+    });
+  }, [book.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const byChapter = useMemo(() => {
+    const m = new Map<string, ReaderComment[]>();
+    for (const c of comments) m.set(c.chapterId, [...(m.get(c.chapterId) ?? []), c]);
+    return m;
+  }, [comments]);
+
+  const publish = async (opts: { removePassword?: boolean } = {}) => {
+    setBusy(true);
+    await flush();
+    const r = await api.publish(book.id, chosen, pw || undefined, opts.removePassword);
+    setShare(r.share);
+    setComments(r.comments);
+    setPw("");
+    setBusy(false);
+  };
+
+  return (
+    <section className="pub-card">
+      <h3>🔗 Private share link</h3>
+      <p>Share only some chapters (e.g. drafts) with a separate link, optionally password-protected. Readers get the page-flip reader (or scroll on phones) and can leave comments on each chapter.</p>
+      <div className="lbl">Chapters to publish</div>
+      <ul className="pub-chapters">
+        {book.chapters.map((c, i) => (
+          <li key={c.id}>
+            <label className="row">
+              <input type="checkbox" checked={chosen.includes(c.id)} onChange={(e) => setChosen(e.target.checked ? book.chapters.filter((x) => x.id === c.id || chosen.includes(x.id)).map((x) => x.id) : chosen.filter((x) => x !== c.id))} />
+              <span>{i + 1}. {c.title}</span>
+              {byChapter.get(c.id)?.length ? <em className="small">💬 {byChapter.get(c.id)!.length}</em> : null}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <div className="row2">
+        <label>{share?.hasPassword ? "Change password" : "Password (optional)"}<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder={share?.hasPassword ? "•••••• (unchanged)" : "Leave empty for anyone with the link"} /></label>
+        <div className="btn-row end">
+          <button className="primary" disabled={busy || !chosen.length} onClick={() => void publish()}>{share ? "Update published chapters" : "Publish"}</button>
+          {share?.hasPassword && <button disabled={busy} onClick={() => void publish({ removePassword: true })}>Remove password</button>}
+        </div>
+      </div>
+      {share && (
+        <div className="share-box">
+          <input readOnly value={url} onFocus={(e) => e.target.select()} />
+          <button onClick={() => { void navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? "Copied ✓" : "Copy"}</button>
+          <a className="button" href={url} target="_blank" rel="noreferrer">Open ↗</a>
+          <button className="danger" onClick={async () => { await api.unpublish(book.id); setShare(null); }}>Unpublish</button>
+          <p className="muted small">Published {timeAgo(share.publishedAt)} · {share.chapterIds.length} chapter(s) · {share.hasPassword ? "🔒 password protected" : "anyone with the link"}.</p>
+        </div>
+      )}
+      <div className="lbl">Reader feedback</div>
+      {comments.length === 0 ? <p className="muted small">No comments yet.</p> : (
+        <ul className="comments">
+          {[...comments].reverse().map((c) => (
+            <li key={c.id}>
+              <div className="c-head"><b>{c.name}</b> on <em>{book.chapters.find((x) => x.id === c.chapterId)?.title ?? "a chapter"}</em> · {timeAgo(c.at)}</div>
+              {c.quote && <blockquote>“{c.quote}”</blockquote>}
+              <p>{c.text}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
