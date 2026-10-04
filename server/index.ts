@@ -161,6 +161,9 @@ app.delete("/api/books/:id", requireUser, wrap(async (req, res) => {
   const b = await getBook(String(req.params.id));
   if (!b || !canEdit(b, res.locals.user)) return res.status(403).json({ error: "Only the author can delete this book." });
   await store.remove("books", b.id);
+  await store.remove("comments", b.id);
+  const share = await findShareForBook(b.id);
+  if (share) await store.remove("shares", share.slug);
   res.json({ ok: true });
 }));
 

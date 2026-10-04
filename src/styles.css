@@ -460,3 +460,19 @@ h1, h2, h3, h4, h5 { font-family: var(--display); font-weight: 800; margin: 0 0 
   .hero { padding: 20px; }
   .reader-by { display: none; }
 }
+
+/* ---------- Music & volume ---------- */
+.music-dock { position: fixed; right: 16px; bottom: 16px; z-index: 150; width: min(360px, calc(100vw - 32px)); background: #121212; border-radius: 14px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); overflow: hidden; color: #fff; }
+.music-dock iframe { display: block; border: 0; }
+.md-head { display: flex; align-items: center; gap: 6px; padding: 6px 8px 6px 12px; font-size: 13px; font-weight: 600; }
+.md-head span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-head button { background: rgba(255, 255, 255, 0.12); border: 0; color: #fff; width: 26px; height: 26px; padding: 0; border-radius: 50%; }
+.md-note { margin: 0; padding: 6px 12px 8px; font-size: 11px; color: rgba(255, 255, 255, 0.6); }
+.music-dock.mini { width: 220px; }
+.vol-wrap { position: relative; }
+.vol-pop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 40; background: #fff; color: var(--ink); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3); white-space: nowrap; font-size: 12.5px; }
+.vol-pop input { width: 140px; }
+.play-here { all: unset; cursor: pointer; color: var(--page-accent); font-weight: bold; }
+.music-btn { font-size: 16px; padding: 4px 10px; }
+.danger-card { border-color: #f0c4c7; }
+button.danger.solid { background: var(--danger); color: #fff; border-color: var(--danger); }

@@ -12,6 +12,8 @@ import { PrintBook } from "./publish/PrintBook.tsx";
 import { SharedReader } from "./publish/SharedReader.tsx";
 import { PublicReader } from "./publish/PublicReader.tsx";
 import { Reader, ReaderLoading, usePagination } from "./reader/Reader.tsx";
+import { MusicDock } from "./reader/MusicDock.tsx";
+import { toEmbed } from "./lib/embed.ts";
 
 export function App() {
   const loadMe = useStore((s) => s.loadMe);
@@ -207,6 +209,7 @@ function BookShell() {
   const load = useStore((s) => s.load);
   const [err, setErr] = useState<string | null>(null);
   const [notMine, setNotMine] = useState(false);
+  const [music, setMusic] = useState(false);
   const loc = useLocation();
 
   useEffect(() => {
@@ -238,10 +241,14 @@ function BookShell() {
           {tabs.map(([to, label]) => <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "on" : "")}>{label}</NavLink>)}
         </nav>
         <span className={`save ${save}`} title={saveError ?? undefined}>{save === "saved" ? "✓ Saved" : save === "saving" ? "Saving…" : save === "error" ? (saveError ?? "⚠ Not saved — retrying") : "Editing…"}</span>
+        {book.music?.url && toEmbed(book.music.url) && !loc.pathname.endsWith("/read") && (
+          <button className={`music-btn ${music ? "on" : ""}`} onClick={() => setMusic((m) => !m)} title="Play your soundtrack while you write">♫</button>
+        )}
         <span className={`ai-dot ${ai ? "on" : ""}`} title={ai ? "AI connected" : "AI is off on this server"}>AI {ai ? (provider === "gemini" ? "· Gemini" : "· Claude") : "off"}</span>
         <UserMenu />
       </header>
       <Outlet />
+      {music && book.music?.url && !loc.pathname.endsWith("/read") && <MusicDock url={book.music.url} title={book.music.title} onClose={() => setMusic(false)} />}
     </div>
   );
 }

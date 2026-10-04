@@ -6,6 +6,8 @@ import { DoodleSvg } from "../doodle/DoodleSvg.tsx";
 import { CastMapSvg } from "../cast/CastMapSvg.tsx";
 import { PAPERS } from "../doodle/theme.ts";
 import { playRustle } from "../lib/rustle.ts";
+import { MusicDock } from "./MusicDock.tsx";
+import { toEmbed } from "../lib/embed.ts";
 import { safeLink } from "../doodle/sanitize.ts";
 
 export function usePagination(book: Book | null, opts: PaginateOpts = {}, delay = 350) {
@@ -52,16 +54,28 @@ export function Reader({ book, pages, chapterStart, toolbarExtra, onChapter, sid
   const [modePref, setModePref] = useState<"auto" | "book" | "scroll">(() => (store.get("ink.mode") as "auto") ?? "auto");
   const mode = modePref === "auto" ? (narrow ? "scroll" : "book") : modePref;
   const [paper, setPaper] = useState<PaperId>(book.paper);
-  const [sound, setSound] = useState(() => store.get("ink.sound") !== "off");
+  // Page-turn volume 0–1 (0 = off). Starts fairly quiet; remembered per browser.
+  const [vol, setVol] = useState(() => {
+    const v = store.get("ink.vol");
+    if (v !== null && !Number.isNaN(Number(v))) return Number(v);
+    return store.get("ink.sound") === "off" ? 0 : 0.35;
+  });
+  const [volOpen, setVolOpen] = useState(false);
+  const [playing, setPlaying] = useState<{ url: string; title: string } | null>(null);
   const [lightbox, setLightbox] = useState<string | "cast" | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
   const view = useMemo(() => ({ ...book, paper }), [book, paper]);
 
   useEffect(() => setPaper(book.paper), [book.paper]);
-  useEffect(() => store.set("ink.sound", sound ? "on" : "off"), [sound]);
+  useEffect(() => store.set("ink.vol", String(vol)), [vol]);
   useEffect(() => store.set("ink.mode", modePref), [modePref]);
 
-  const handlers: PageHandlers = { onDoodle: (id) => setLightbox(id), onCast: () => setLightbox("cast") };
+  const handlers: PageHandlers = {
+    onDoodle: (id) => setLightbox(id),
+    onCast: () => setLightbox("cast"),
+    onAudio: (url, title) => setPlaying({ url, title }),
+  };
+  const soundtrack = book.music?.url && toEmbed(book.music.url) ? book.music : null;
 
   return (
     <div className={`reader mode-${mode}`}>
@@ -74,7 +88,20 @@ export function Reader({ book, pages, chapterStart, toolbarExtra, onChapter, sid
         <select value={paper} onChange={(e) => setPaper(e.target.value as PaperId)} title="Paper">
           {Object.values(PAPERS).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
-        <button className={sound ? "on" : ""} onClick={() => setSound((s) => !s)} title="Page-turn sound">{sound ? "🔊" : "🔈"}</button>
+        <div className="vol-wrap">
+          <button className={vol > 0 ? "on" : ""} onClick={() => setVolOpen((o) => !o)} title="Page-turn sound volume">{vol === 0 ? "🔇" : vol < 0.5 ? "🔉" : "🔊"}</button>
+          {volOpen && (
+            <div className="vol-pop" onMouseLeave={() => setVolOpen(false)}>
+              <span>Page sound</span>
+              <input type="range" min={0} max={100} step={5} value={Math.round(vol * 100)}
+                onChange={(e) => setVol(+e.target.value / 100)} onMouseUp={() => playRustle(vol)} onTouchEnd={() => playRustle(vol)} aria-label="Page-turn volume" />
+              <b>{vol === 0 ? "off" : `${Math.round(vol * 100)}%`}</b>
+            </div>
+          )}
+        </div>
+        {soundtrack && (
+          <button className={playing ? "on" : ""} onClick={() => setPlaying(playing ? null : soundtrack)} title="Play the book's soundtrack">♫ {soundtrack.title || "Music"}</button>
+        )}
         {toolbarExtra}
       </div>
 
@@ -90,12 +117,13 @@ export function Reader({ book, pages, chapterStart, toolbarExtra, onChapter, sid
           </nav>
         )}
         {mode === "book" ? (
-          <Spreads book={view} pages={pages} handlers={handlers} sound={sound} onChapter={onChapter} jumpRef={jumpRef} />
+          <Spreads book={view} pages={pages} handlers={handlers} vol={vol} onChapter={onChapter} jumpRef={jumpRef} />
         ) : (
           <Scroll book={view} chapterIds={Object.keys(chapterStart)} handlers={handlers} onChapter={onChapter} jumpRef={jumpRef} />
         )}
         {side}
       </div>
+      {playing && <MusicDock key={playing.url} url={playing.url} title={playing.title} onClose={() => setPlaying(null)} />}
 
       {lightbox && (
         <div className="lightbox" onClick={() => setLightbox(null)}>
@@ -117,8 +145,8 @@ export function Reader({ book, pages, chapterStart, toolbarExtra, onChapter, sid
 // A module-level ref so the TOC can drive whichever view is active.
 const jumpRef: { current: ((pageIndex: number, chapterId?: string) => void) | null } = { current: null };
 
-function Spreads({ book, pages, handlers, sound, onChapter, jumpRef: jr }: {
-  book: Book; pages: Page[]; handlers: PageHandlers; sound: boolean; onChapter?: (id: string | null) => void; jumpRef: typeof jumpRef;
+function Spreads({ book, pages, handlers, vol, onChapter, jumpRef: jr }: {
+  book: Book; pages: Page[]; handlers: PageHandlers; vol: number; onChapter?: (id: string | null) => void; jumpRef: typeof jumpRef;
 }) {
   const g = pageGeometry(book.trim);
   const spreads = useMemo(() => {
@@ -154,14 +182,14 @@ function Spreads({ book, pages, handlers, sound, onChapter, jumpRef: jr }: {
     if (anim) return;
     const to = s + dir;
     if (to < 0 || to >= spreads.length) return;
-    if (sound) playRustle();
+    playRustle(vol);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setS(to); return; }
     setAnim({ dir, to });
-  }, [anim, s, spreads.length, sound]);
+  }, [anim, s, spreads.length, vol]);
 
   jr.current = (pageIndex) => {
     const to = pageIndex === 0 ? 0 : Math.floor((pageIndex + 1) / 2);
-    if (sound) playRustle();
+    playRustle(vol);
     setAnim(null);
     setS(Math.max(0, Math.min(spreads.length - 1, to)));
   };
@@ -276,7 +304,9 @@ function Scroll({ book, chapterIds, handlers, onChapter, jumpRef: jr }: {
               if (b.type === "scene") return <div key={b.id} className="bp-scene"><span>{b.text}</span></div>;
               if (b.type === "note" && b.text) return <aside key={b.id} className="bp-note">{b.text}</aside>;
               if (b.type === "audio") return (
-                <div key={b.id} className="bp-audio"><span>♫</span><div>{b.caption || "Listen"}{safeLink(b.url) && <a href={safeLink(b.url)} target="_blank" rel="noreferrer"> ▶ play</a>}</div></div>
+                <div key={b.id} className="bp-audio"><span>♫</span><div>{b.caption || "Listen"}{toEmbed(b.url) ? (
+                  <button className="play-here" onClick={() => handlers.onAudio?.(b.url!, b.caption || "Music")}> ▶ play</button>
+                ) : safeLink(b.url) && <a href={safeLink(b.url)} target="_blank" rel="noreferrer"> ▶ play</a>}</div></div>
               );
               return null;
             })}

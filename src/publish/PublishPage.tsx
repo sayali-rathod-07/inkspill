@@ -8,6 +8,8 @@ import { api } from "../lib/api.ts";
 import { download } from "../lib/fonts.ts";
 import { buildEpub } from "./epub.ts";
 import { bookWords, timeAgo } from "../lib/util.ts";
+import { toEmbed } from "../lib/embed.ts";
+import { useNavigate } from "react-router-dom";
 
 const PAPER_STOCK = {
   white: { label: "White paper (B&W interior)", inPerPage: 0.002252 },
@@ -115,7 +117,11 @@ export function PublishPage() {
         {epubMsg && <span className="small"> {epubMsg}</span>}
       </section>
 
+      <SoundtrackCard />
+
       <WebShare />
+
+      <DangerZone />
     </div>
   );
 }
@@ -140,6 +146,71 @@ function VisibilityCard() {
           <button onClick={() => { void navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? "Copied ✓" : "Copy link"}</button>
           <a className="button" href={url} target="_blank" rel="noreferrer">Open ↗</a>
         </div>
+      )}
+    </section>
+  );
+}
+
+function SoundtrackCard() {
+  const book = useStore((s) => s.book)!;
+  const update = useStore((s) => s.update);
+  const url = book.music?.url ?? "";
+  const valid = !url || toEmbed(url);
+  const embed = toEmbed(url);
+  return (
+    <section className="pub-card">
+      <h3>♫ Book soundtrack</h3>
+      <p>Paste a <b>Spotify</b> playlist, album or song link (or a YouTube playlist). Readers get a <b>♫ Music</b> button that plays it in a little player while they flip pages, and you can play it while writing too.</p>
+      <label>Spotify / YouTube link
+        <input value={url} placeholder="https://open.spotify.com/playlist/…" onChange={(e) => update((b) => { b.music = { url: e.target.value.trim(), title: b.music?.title || "Sukoon Vibes" }; if (!b.music.url) delete b.music; })} />
+      </label>
+      {!valid && <div className="ai-error">That doesn't look like a Spotify or YouTube link. In Spotify: open the playlist → ⋯ → Share → Copy link to playlist.</div>}
+      {url && (
+        <label>Name shown on the button
+          <input value={book.music?.title ?? ""} placeholder="Sukoon Vibes" onChange={(e) => update((b) => { if (b.music) b.music.title = e.target.value; })} />
+        </label>
+      )}
+      {embed && <iframe title="Soundtrack preview" src={embed.src} width="100%" height={embed.height} style={{ border: 0, borderRadius: 12 }} allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />}
+      <p className="muted small">Free to use. Listeners logged in to Spotify in their browser hear full songs; others get 30-second previews (Spotify's rule).</p>
+    </section>
+  );
+}
+
+function DangerZone() {
+  const book = useStore((s) => s.book)!;
+  const flush = useStore((s) => s.flush);
+  const nav = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const matches = typed.trim() === book.title.trim();
+  return (
+    <section className="pub-card danger-card">
+      <h3>🗑 Delete this book</h3>
+      {!open ? (
+        <>
+          <p>Permanently removes the book, its chapters, doodles, share links and comments. This can't be undone — download an EPUB first if you want a copy.</p>
+          <button className="danger" onClick={() => setOpen(true)}>Delete this book…</button>
+        </>
+      ) : (
+        <>
+          <p>To confirm, type the book's title: <b>{book.title}</b></p>
+          <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={book.title} autoFocus />
+          <div className="btn-row">
+            <button className="danger solid" disabled={!matches || busy} onClick={async () => {
+              setBusy(true); setErr(null);
+              try {
+                await flush();
+                await api.deleteBook(book.id);
+                useStore.setState({ book: null, save: "saved" });
+                nav("/", { replace: true });
+              } catch (e) { setErr((e as Error).message); setBusy(false); }
+            }}>{busy ? "Deleting…" : "Delete forever"}</button>
+            <button onClick={() => { setOpen(false); setTyped(""); }}>Cancel</button>
+          </div>
+          {err && <div className="ai-error">{err}</div>}
+        </>
       )}
     </section>
   );

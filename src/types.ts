@@ -175,6 +175,8 @@ export interface Book {
   doodles: Record<string, Doodle>;
   cast: CastMap;
   coverDoodleId?: string;
+  /** Optional soundtrack (Spotify or YouTube link) readers can play while reading. */
+  music?: { url: string; title: string };
   updatedAt: number;
 }
 

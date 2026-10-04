@@ -6,11 +6,13 @@ import { DoodleSvg } from "../doodle/DoodleSvg.tsx";
 import { CharacterAvatar } from "../doodle/rig.tsx";
 import { THEMES } from "../doodle/theme.ts";
 import { safeLink } from "../doodle/sanitize.ts";
+import { toEmbed } from "../lib/embed.ts";
 
 export interface PageHandlers {
   onDoodle?: (doodleId: string) => void;
   onJump?: (pageIndex: number) => void;
   onCast?: () => void;
+  onAudio?: (url: string, title: string) => void;
 }
 
 export const BookPage = memo(function BookPage({ page, book, side, handlers, bleed = 0 }: {
@@ -180,7 +182,8 @@ function Item({ it, book, handlers }: { it: PageItem; book: Book; handlers?: Pag
           <span>♫</span>
           <div>
             {it.caption || "Listen"}
-            {url && !isFile && <a href={url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}> ▶ play</a>}
+            {url && toEmbed(url) && handlers?.onAudio && <button className="play-here" onClick={(e) => { e.stopPropagation(); handlers.onAudio!(url, it.caption || "Music"); }}> ▶ play</button>}
+            {url && !isFile && !(toEmbed(url) && handlers?.onAudio) && <a href={url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}> ▶ play</a>}
             {url && isFile && <audio src={url} controls preload="none" />}
           </div>
         </div>

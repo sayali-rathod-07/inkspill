@@ -1,7 +1,9 @@
 // Synthesised page-rustle: a short band-passed noise sweep (no audio files needed).
 let ac: AudioContext | null = null;
 
-export function playRustle() {
+/** volume: 0 (silent) … 1 (full). */
+export function playRustle(volume = 0.4) {
+  if (volume <= 0) return;
   try {
     ac ??= new AudioContext();
     const dur = 0.42;
@@ -19,7 +21,7 @@ export function playRustle() {
     bp.frequency.setValueAtTime(3200, ac.currentTime);
     bp.frequency.exponentialRampToValueAtTime(900, ac.currentTime + dur);
     const g = ac.createGain();
-    g.gain.value = 0.22;
+    g.gain.value = 0.22 * Math.min(1, volume);
     src.connect(bp).connect(g).connect(ac.destination);
     src.start();
   } catch {
