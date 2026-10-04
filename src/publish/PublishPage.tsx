@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { PaperId, ReaderComment, ShareInfo, ThemeId, TrimId } from "../types.ts";
+import type { PaperId, ReadStats, ReaderComment, ShareInfo, ThemeId, TrimId } from "../types.ts";
 import { useStore } from "../store.ts";
 import { usePagination } from "../reader/Reader.tsx";
 import { TRIMS, pageGeometry } from "../reader/paginate.ts";
@@ -66,6 +66,8 @@ export function PublishPage() {
 
   return (
     <div className="publish">
+      <StatsCard />
+
       <VisibilityCard />
 
       <section className="pub-card">
@@ -123,6 +125,53 @@ export function PublishPage() {
 
       <DangerZone />
     </div>
+  );
+}
+
+function StatsCard() {
+  const book = useStore((s) => s.book)!;
+  const [stats, setStats] = useState<ReadStats | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const load = () => api.stats(book.id).then(setStats).catch((e) => setErr((e as Error).message));
+  useEffect(() => { void load(); }, [book.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const maxCh = Math.max(1, ...(stats?.chapters.map((c) => c.readers) ?? [1]));
+  const maxDay = Math.max(1, ...(stats?.recent.map((d) => d.readers) ?? [1]));
+  return (
+    <section className="pub-card stats-card">
+      <h3>📊 Readers <button className="refresh" onClick={() => void load()} title="Refresh">↻</button></h3>
+      {err && <div className="ai-error">{err}</div>}
+      {!stats ? <p className="muted">Loading…</p> : stats.readers === 0 ? (
+        <p>No readers yet. Share your book's link (below) and you'll see people show up here. Your own visits aren't counted.</p>
+      ) : (
+        <>
+          <div className="stats">
+            <div><b>{stats.readers.toLocaleString()}</b><span>people have read it</span></div>
+            <div><b>{stats.last7Days.toLocaleString()}</b><span>in the last 7 days</span></div>
+            <div><b>{stats.finished.toLocaleString()}</b><span>reached the last chapter</span></div>
+            <div><b>{stats.opens.toLocaleString()}</b><span>times opened</span></div>
+          </div>
+          <div className="lbl">Readers per day (last 14 days)</div>
+          <div className="spark" role="img" aria-label="Readers per day">
+            {stats.recent.map((d) => (
+              <div key={d.day} title={`${d.day}: ${d.readers} reader${d.readers === 1 ? "" : "s"}`}>
+                <i style={{ height: `${(d.readers / maxDay) * 100}%` }} />
+              </div>
+            ))}
+          </div>
+          <div className="lbl">How far people got</div>
+          <ul className="reach">
+            {stats.chapters.map((c, i) => (
+              <li key={c.id}>
+                <span className="t">{i + 1}. {c.title}</span>
+                <span className="bar"><i style={{ width: `${(c.readers / maxCh) * 100}%` }} /></span>
+                <b>{c.readers}</b>
+              </li>
+            ))}
+          </ul>
+          <p className="muted small">A reader is one person on one browser — the same friend on phone and laptop counts twice. No names or personal data are stored.</p>
+        </>
+      )}
+    </section>
   );
 }
 

@@ -4,6 +4,7 @@ import type { Book, ReaderComment } from "../types.ts";
 import { api } from "../lib/api.ts";
 import { Reader, ReaderLoading, usePagination } from "../reader/Reader.tsx";
 import { timeAgo } from "../lib/util.ts";
+import { trackRead } from "../lib/track.ts";
 
 /** Public, optionally password-protected reader for serialised chapters. */
 export function SharedReader() {
@@ -32,6 +33,8 @@ export function SharedReader() {
 
   useEffect(() => { void load(pw || undefined); }, [load]); // eslint-disable-line react-hooks/exhaustive-deps
   const pag = usePagination(book);
+  useEffect(() => { if (book) trackRead(book.id, null, slug); }, [book, slug]);
+  useEffect(() => { if (book && chapterId) trackRead(book.id, chapterId, slug); }, [book, chapterId, slug]);
 
   if (needPw) {
     return (

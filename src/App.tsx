@@ -83,6 +83,7 @@ function BookCard({ b }: { b: BookSummary }) {
         <Link to={`/read/${b.id}`}><b>{b.title}</b></Link>
         {b.subtitle && <span>{b.subtitle}</span>}
         <em>by {b.ownerName || b.author || "someone"} · {b.chapters} chapters · {b.words.toLocaleString()} words · {timeAgo(b.updatedAt)}</em>
+        {b.readers > 0 && <span className="reads">👀 {b.readers.toLocaleString()} reader{b.readers === 1 ? "" : "s"}</span>}
         <div className="btn-row">
           <Link className="button" to={`/read/${b.id}`}>📖 Read</Link>
           {b.mine && <Link className="button primary" to={`/book/${b.id}/write`}>✎ Write</Link>}

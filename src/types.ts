@@ -183,6 +183,16 @@ export interface Book {
 export interface BookSummary {
   id: string; title: string; subtitle: string; author: string; updatedAt: number; chapters: number; words: number; coverSrc?: string;
   ownerName: string; ownerUsername: string; visibility: "public" | "private"; mine: boolean;
+  readers: number;
+}
+
+export interface ReadStats {
+  readers: number;
+  opens: number;
+  last7Days: number;
+  finished: number;
+  chapters: { id: string; title: string; readers: number }[];
+  recent: { day: string; readers: number }[];
 }
 
 export interface ShareInfo { slug: string; chapterIds: string[]; hasPassword: boolean; publishedAt: number }

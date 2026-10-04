@@ -11,6 +11,7 @@ import {
   aiDailyLimit, currentUser, findUser, initAuth, isOwnerUser, login, logout, ownerIsConfigured, ownerUsername, requireUser, signup, takeAiCredit, userCount,
 } from "./auth.ts";
 import { openStore } from "./storage.ts";
+import { readerCount, recordRead, summarize } from "./stats.ts";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(root, "data");
@@ -105,14 +106,15 @@ app.post("/api/logout", logout);
 // ---------- books ----------
 app.get("/api/books", wrap(async (req, res) => {
   const u = currentUser(req);
-  const list: BookSummary[] = (await allBooks())
-    .filter((b) => canRead(b, u))
+  const readable = (await allBooks()).filter((b) => canRead(b, u));
+  const counts = new Map(await Promise.all(readable.map(async (b) => [b.id, await readerCount(store, b.id)] as const)));
+  const list: BookSummary[] = readable
     .map((b) => {
       const owner = b.ownerId ? findUser(b.ownerId) : null;
       return {
         id: b.id, title: b.title, subtitle: b.subtitle, author: b.author, updatedAt: b.updatedAt, chapters: b.chapters.length,
         words: wordCount(b), coverSrc: coverSrc(b), ownerName: owner?.displayName ?? b.author, ownerUsername: owner?.username ?? "",
-        visibility: b.visibility ?? "public", mine: canEdit(b, u),
+        visibility: b.visibility ?? "public", mine: canEdit(b, u), readers: counts.get(b.id) ?? 0,
       };
     })
     .sort((a, b) => b.updatedAt - a.updatedAt);
@@ -162,9 +164,27 @@ app.delete("/api/books/:id", requireUser, wrap(async (req, res) => {
   if (!b || !canEdit(b, res.locals.user)) return res.status(403).json({ error: "Only the author can delete this book." });
   await store.remove("books", b.id);
   await store.remove("comments", b.id);
+  await store.remove("stats", b.id);
   const share = await findShareForBook(b.id);
   if (share) await store.remove("shares", share.slug);
   res.json({ ok: true });
+}));
+
+// ---------- reader counts ----------
+// The reader app calls this when a book is opened (no chapterId) and when a chapter is reached.
+app.post("/api/books/:id/read", wrap(async (req, res) => {
+  const b = await getBook(String(req.params.id));
+  const u = currentUser(req);
+  if (!b) return res.status(404).json({ error: "Book not found" });
+  const viaShare = typeof req.body?.share === "string" && (await getShare(req.body.share))?.bookId === b.id;
+  if (!canRead(b, u) && !viaShare) return res.status(404).json({ error: "Book not found" });
+  if (!canEdit(b, u)) await recordRead(store, b, String(req.body?.visitor ?? ""), req.body?.chapterId ? String(req.body.chapterId) : undefined);
+  res.json({ ok: true });
+}));
+app.get("/api/books/:id/stats", requireUser, wrap(async (req, res) => {
+  const b = await getBook(String(req.params.id));
+  if (!b || !canEdit(b, res.locals.user)) return res.status(403).json({ error: "Only the author can see reader stats." });
+  res.json(await summarize(store, b));
 }));
 
 // Public-book comments (anyone can leave one; the author sees them on the Publish page).

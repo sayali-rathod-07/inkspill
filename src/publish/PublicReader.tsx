@@ -5,6 +5,7 @@ import { api } from "../lib/api.ts";
 import { Reader, ReaderLoading, usePagination } from "../reader/Reader.tsx";
 import { CommentPanel } from "./SharedReader.tsx";
 import { useStore } from "../store.ts";
+import { trackRead } from "../lib/track.ts";
 
 /** Anyone can read a public book here; only its author gets an Edit button. */
 export function PublicReader() {
@@ -22,6 +23,9 @@ export function PublicReader() {
     api.bookComments(bookId!).then(setComments).catch(() => setComments([]));
   }, [bookId, me?.id]);
   const pag = usePagination(book);
+  // Count this reader (the server ignores the author's own visits).
+  useEffect(() => { if (book) trackRead(book.id); }, [book]);
+  useEffect(() => { if (book && chapterId) trackRead(book.id, chapterId); }, [book, chapterId]);
 
   if (error) return <div className="gate"><h2>{error}</h2><Link to="/">← Back to the library</Link></div>;
   if (!book || !pag) return <ReaderLoading />;

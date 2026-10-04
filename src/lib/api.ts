@@ -1,5 +1,5 @@
 import type {
-  Book, BookSummary, PublicUser, CharacterDNA, DoodleAiRequest, DoodleAiResponse, PolishMode, PolishResponse, ReaderComment, ShareInfo,
+  Book, BookSummary, PublicUser, ReadStats, CharacterDNA, DoodleAiRequest, DoodleAiResponse, PolishMode, PolishResponse, ReaderComment, ShareInfo,
 } from "../types.ts";
 
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
@@ -23,6 +23,9 @@ export const api = {
     req<{ user: PublicUser }>("/api/signup", { method: "POST", body: JSON.stringify({ username, password, displayName }) }),
   login: (username: string, password: string) => req<{ user: PublicUser }>("/api/login", { method: "POST", body: JSON.stringify({ username, password }) }),
   logout: () => req("/api/logout", { method: "POST" }),
+  trackRead: (id: string, visitor: string, chapterId?: string, share?: string) =>
+    req<{ ok: true }>(`/api/books/${id}/read`, { method: "POST", body: JSON.stringify({ visitor, chapterId, share }) }),
+  stats: (id: string) => req<ReadStats>(`/api/books/${id}/stats`),
   bookComments: (id: string) => req<ReaderComment[]>(`/api/books/${id}/comments`),
   postBookComment: (id: string, c: Omit<ReaderComment, "id" | "at">) => req<ReaderComment>(`/api/books/${id}/comments`, { method: "POST", body: JSON.stringify(c) }),
   books: () => req<BookSummary[]>("/api/books"),

@@ -476,3 +476,17 @@ h1, h2, h3, h4, h5 { font-family: var(--display); font-weight: 800; margin: 0 0 
 .music-btn { font-size: 16px; padding: 4px 10px; }
 .danger-card { border-color: #f0c4c7; }
 button.danger.solid { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+/* ---------- Reader stats ---------- */
+.reads { font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 2px; }
+.stats-card h3 { display: flex; align-items: center; gap: 8px; }
+.stats-card .refresh { margin-left: auto; padding: 2px 9px; font-size: 14px; }
+.spark { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; height: 60px; align-items: end; background: var(--accent-soft); border-radius: 10px; padding: 6px; }
+.spark div { height: 100%; display: flex; align-items: flex-end; }
+.spark i { display: block; width: 100%; min-height: 2px; background: var(--accent); border-radius: 3px 3px 0 0; }
+.reach { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+.reach li { display: grid; grid-template-columns: minmax(0, 1.4fr) 1fr 32px; gap: 8px; align-items: center; font-size: 12.5px; }
+.reach .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reach .bar { height: 10px; background: var(--accent-soft); border-radius: 99px; overflow: hidden; }
+.reach .bar i { display: block; height: 100%; background: var(--accent-2); border-radius: 99px; }
+.reach b { text-align: right; }

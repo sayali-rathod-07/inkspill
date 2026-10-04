@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import path from "node:path";
 import pg from "pg";
 
-export type Collection = "books" | "shares" | "comments" | "meta";
+export type Collection = "books" | "shares" | "comments" | "meta" | "stats";
 
 export interface StoredFile { type: string; data: Buffer }
 
@@ -25,7 +25,7 @@ const MIME: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg
 class FileStore implements Store {
   kind = "files" as const;
   constructor(private dir: string) {
-    for (const c of ["books", "shares", "comments", "meta", "uploads"]) mkdirSync(path.join(dir, c), { recursive: true });
+    for (const c of ["books", "shares", "comments", "meta", "stats", "uploads"]) mkdirSync(path.join(dir, c), { recursive: true });
   }
   private p(col: Collection, id: string) { return path.join(this.dir, col, `${safe(id)}.json`); }
   async get<T>(col: Collection, id: string) {
