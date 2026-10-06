@@ -5,7 +5,7 @@ import { CharacterAvatar, CharacterRig, RIG_H, RIG_W } from "../doodle/rig.tsx";
 import { THEMES, THEME_LIST, isMonochrome } from "../doodle/theme.ts";
 import { CastMapSvg, MAP_H, MAP_W } from "./CastMapSvg.tsx";
 import { api } from "../lib/api.ts";
-import { uid } from "../lib/util.ts";
+import { setBookTheme, uid } from "../lib/util.ts";
 
 import { COLORS, HAIRS, SKINS } from "../doodle/swatches.ts";
 
@@ -37,7 +37,9 @@ function Characters({ book }: { book: Book }) {
   const [selId, setSelId] = useState<string | null>(book.characters[0]?.id ?? null);
   const [pose, setPose] = useState<Pose>("wave");
   const [expr, setExpr] = useState<Expression>("happy");
-  const [themeId, setThemeId] = useState(book.theme);
+  // The book's drawing style — saved, so it stays the same everywhere.
+  const themeId = book.theme;
+  const setThemeId = (t: typeof book.theme) => update((b) => setBookTheme(b, t));
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -84,11 +86,12 @@ function Characters({ book }: { book: Book }) {
               <rect width={RIG_W} height={RIG_H} rx={14} fill={theme.paper} />
               <CharacterRig dna={c.dna} pose={pose} expression={expr} theme={theme} />
             </svg>
-            <div className="seg wrap">{THEME_LIST.map((t) => <button key={t.id} className={themeId === t.id ? "on" : ""} onClick={() => setThemeId(t.id)}>{t.name}</button>)}</div>
+            <div className="lbl">Book drawing style <span className="muted small">(saved for all doodles)</span></div>
+            <div className="seg wrap">{THEME_LIST.map((t) => <button key={t.id} className={themeId === t.id ? "on" : ""} onClick={() => setThemeId(t.id)} title={t.blurb}>{t.name}</button>)}</div>
             {isMonochrome(themeId) && (
               <div className="mono-hint">
                 🎨 <b>{THEMES[themeId].name}</b> shows every colour as a {themeId === "purple-ink" ? "purple" : "grey"} tint, so colour changes look subtle here.
-                <button onClick={() => setThemeId("storybook")}>Preview in full colour</button>
+                <button onClick={() => setThemeId("storybook")}>Switch the book to full colour</button>
               </div>
             )}
             <div className="lbl">Try a pose</div>

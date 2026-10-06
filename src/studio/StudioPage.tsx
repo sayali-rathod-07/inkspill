@@ -5,7 +5,7 @@ import type { Doodle, DoodleEl } from "../types.ts";
 import { DoodleSvg } from "../doodle/DoodleSvg.tsx";
 import { DoodleEditor } from "./DoodleEditor.tsx";
 import { panelRects } from "../doodle/layout.ts";
-import { uid } from "../lib/util.ts";
+import { setBookTheme, uid } from "../lib/util.ts";
 
 const SIZES = [
   { id: "strip", label: "Comic strip", w: 1200, h: 640 },
@@ -100,7 +100,8 @@ export function StudioPage() {
       </nav>
 
       {current ? (
-        <DoodleEditor key={current.id} doodle={current} cast={book.characters} onChange={onChange}
+        <DoodleEditor key={current.id} doodle={current} cast={book.characters} bookTheme={book.theme} onChange={onChange}
+          onBookTheme={(t) => update((b) => setBookTheme(b, t))}
           onSaveLook={(charId, dna) => update((b) => { const c = b.characters.find((x) => x.id === charId); if (c) c.dna = dna; })} />
       ) : (
         <div className="studio-empty">

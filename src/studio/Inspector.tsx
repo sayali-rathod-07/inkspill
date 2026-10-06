@@ -51,14 +51,16 @@ export function MonoHint({ theme, onSwitch }: { theme: ThemeId; onSwitch: () => 
   return (
     <div className="mono-hint">
       🎨 <b>{THEMES[theme].name}</b> turns colours into {theme === "purple-ink" ? "purple" : "grey"} tints, so picked colours won't show exactly.
-      <button onClick={onSwitch}>Use full colour</button>
+      <button onClick={onSwitch}>Switch to full colour (Storybook)</button>
     </div>
   );
 }
 
-export function Inspector({ el, doodle, cast, textRef, onPatch, onRemove, onDuplicate, onOrder, onDoodle, onSaveLook }: {
+export function Inspector({ el, doodle, bookTheme, cast, textRef, onPatch, onRemove, onDuplicate, onOrder, onDoodle, onSaveLook, onBookTheme }: {
   el: DoodleEl;
   doodle: Doodle;
+  bookTheme: ThemeId;
+  onBookTheme: (t: ThemeId) => void;
   cast: Character[];
   textRef: React.RefObject<HTMLTextAreaElement | null>;
   onPatch: (fn: (e: DoodleEl) => DoodleEl) => void;
@@ -69,7 +71,8 @@ export function Inspector({ el, doodle, cast, textRef, onPatch, onRemove, onDupl
   onSaveLook: (charId: string, dna: CharacterDNA) => void;
 }) {
   const t = THEMES[doodle.theme] ?? THEMES.storybook;
-  const toFull = () => onDoodle((d) => { d.theme = "storybook"; });
+  // If this doodle follows the book's style, switch the whole book so everything stays consistent.
+  const toFull = () => (doodle.theme === bookTheme ? onBookTheme("storybook") : onDoodle((d) => { d.theme = "storybook"; }));
   // Local text state so typing doesn't create one undo step per keystroke.
   const [text, setText] = useState(el.type === "bubble" ? el.text : "");
   useEffect(() => { if (el.type === "bubble") setText(el.text); }, [el.id, el.type === "bubble" ? el.text : ""]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -255,7 +258,9 @@ export function Inspector({ el, doodle, cast, textRef, onPatch, onRemove, onDupl
 }
 
 /** Shown when nothing is selected: doodle-wide settings. */
-export function DoodleSettings({ doodle, onDoodle }: { doodle: Doodle; onDoodle: (fn: (d: Doodle) => void) => void }) {
+export function DoodleSettings({ doodle, bookTheme, onDoodle, onBookTheme }: {
+  doodle: Doodle; bookTheme: ThemeId; onDoodle: (fn: (d: Doodle) => void) => void; onBookTheme: (t: ThemeId) => void;
+}) {
   const bgPreset = ["paper", "white", "soft", "none"];
   return (
     <div className="insp">
@@ -271,6 +276,12 @@ export function DoodleSettings({ doodle, onDoodle }: { doodle: Doodle; onDoodle:
         ))}
       </div>
       <p className="muted small">{THEMES[doodle.theme]?.blurb}</p>
+      {doodle.theme !== bookTheme ? (
+        <div className="mono-hint">
+          This doodle uses <b>{THEMES[doodle.theme]?.name}</b>; your book uses <b>{THEMES[bookTheme]?.name}</b>.
+          <button onClick={() => onBookTheme(doodle.theme)}>Use {THEMES[doodle.theme]?.name} for the whole book</button>
+        </div>
+      ) : <p className="muted small">✓ Same as your book's style.</p>}
       <div className="lbl">Background</div>
       <div className="seg wrap">
         {bgPreset.map((b) => <button key={b} className={doodle.background === b ? "on" : ""} onClick={() => onDoodle((d) => { d.background = b; })}>{b === "none" ? "Transparent" : b[0].toUpperCase() + b.slice(1)}</button>)}

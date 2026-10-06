@@ -38,11 +38,13 @@ const rotate = (x: number, y: number, deg: number): [number, number] => {
   return [x * c - y * s, x * s + y * c];
 };
 
-export function DoodleEditor({ doodle, cast, onChange, onSaveLook, sourceHint }: {
+export function DoodleEditor({ doodle, cast, bookTheme, onChange, onSaveLook, onBookTheme, sourceHint }: {
   doodle: Doodle;
   cast: Character[];
+  bookTheme: ThemeId;
   onChange: (fn: (d: Doodle) => void) => void;
   onSaveLook: (charId: string, dna: CharacterDNA) => void;
+  onBookTheme: (t: ThemeId) => void;
   sourceHint?: string;
 }) {
   const [els, setEls] = useState<DoodleEl[]>(doodle.elements);
@@ -508,10 +510,10 @@ export function DoodleEditor({ doodle, cast, onChange, onSaveLook, sourceHint }:
 
       <aside className="studio-inspector">
         {selected ? (
-          <Inspector el={selected} doodle={doodle} cast={cast} textRef={textRef} onDoodle={onChange} onSaveLook={onSaveLook}
+          <Inspector el={selected} doodle={doodle} bookTheme={bookTheme} onBookTheme={onBookTheme} cast={cast} textRef={textRef} onDoodle={onChange} onSaveLook={onSaveLook}
             onPatch={(fn) => patch(selected.id, fn)} onRemove={() => remove(selected.id)} onDuplicate={() => duplicate(selected.id)} onOrder={(d) => reorder(selected.id, d)} />
         ) : (
-          <DoodleSettings doodle={doodle} onDoodle={onChange} />
+          <DoodleSettings doodle={doodle} bookTheme={bookTheme} onDoodle={onChange} onBookTheme={onBookTheme} />
         )}
         <Layers els={els} sel={sel} cast={castMap} onSelect={(id) => { setSel(id); setTool("select"); }}
           onToggle={(id, key) => patch(id, (e) => ({ ...e, [key]: !e[key] }))} />

@@ -1,7 +1,17 @@
 import { nanoid } from "nanoid";
-import type { Book, Chapter } from "../types.ts";
+import type { Book, Chapter, ThemeId } from "../types.ts";
 
 export const uid = (n = 8) => nanoid(n);
+
+/**
+ * Change the book's drawing style. Doodles that were following the book's style move with it;
+ * doodles you deliberately gave a different style keep theirs.
+ */
+export function setBookTheme(b: Book, theme: ThemeId) {
+  const old = b.theme;
+  b.theme = theme;
+  for (const d of Object.values(b.doodles)) if (d.theme === old) d.theme = theme;
+}
 export const words = (s = "") => s.split(/\s+/).filter(Boolean).length;
 export const chapterWords = (c: Chapter) => c.blocks.reduce((n, b) => n + (b.type === "text" ? words(b.text) : 0), 0);
 export const bookWords = (b: Book) => b.chapters.reduce((n, c) => n + chapterWords(c), 0);

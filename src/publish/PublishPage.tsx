@@ -7,7 +7,7 @@ import { PAPERS, THEME_LIST } from "../doodle/theme.ts";
 import { api } from "../lib/api.ts";
 import { download } from "../lib/fonts.ts";
 import { buildEpub } from "./epub.ts";
-import { bookWords, timeAgo } from "../lib/util.ts";
+import { bookWords, setBookTheme, timeAgo } from "../lib/util.ts";
 import { toEmbed } from "../lib/embed.ts";
 import { useNavigate } from "react-router-dom";
 
@@ -79,7 +79,7 @@ export function PublishPage() {
         <label>Subtitle<input value={book.subtitle} onChange={(e) => update((b) => { b.subtitle = e.target.value; })} /></label>
         <label>Dedication <span className="muted small">(optional page in the front matter)</span><textarea rows={2} value={book.dedication} onChange={(e) => update((b) => { b.dedication = e.target.value; })} /></label>
         <div className="row3">
-          <label>Doodle style<select value={book.theme} onChange={(e) => update((b) => { b.theme = e.target.value as ThemeId; })}>{THEME_LIST.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <label>Doodle style<select value={book.theme} onChange={(e) => update((b) => setBookTheme(b, e.target.value as ThemeId))}>{THEME_LIST.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
           <label>Paper<select value={book.paper} onChange={(e) => update((b) => { b.paper = e.target.value as PaperId; })}>{Object.values(PAPERS).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
           <label>Trim size<select value={book.trim} onChange={(e) => update((b) => { b.trim = e.target.value as TrimId; })}>{Object.entries(TRIMS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></label>
         </div>
@@ -87,7 +87,7 @@ export function PublishPage() {
           <option value="">None</option>
           {Object.values(book.doodles).map((d) => <option key={d.id} value={d.id}>{d.title}</option>)}
         </select></label>
-        <p className="muted small">New doodles use the book's style; each doodle can override it in the Studio.</p>
+        <p className="muted small">Changing the doodle style updates all your doodles (except any you gave their own style in the Studio).</p>
       </section>
 
       <section className="pub-card">
