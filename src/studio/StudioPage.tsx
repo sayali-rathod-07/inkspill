@@ -37,6 +37,8 @@ export function StudioPage() {
   const book = useStore((s) => s.book)!;
   const update = useStore((s) => s.update);
   const [creating, setCreating] = useState(false);
+  const [shape, setShape] = useState(SIZES[0].id);
+  const [panelCount, setPanelCount] = useState(2);
   const [filter, setFilter] = useState("");
 
   const list = useMemo(
@@ -114,21 +116,35 @@ export function StudioPage() {
 
       {creating && (
         <div className="modal-back" onClick={() => setCreating(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal new-doodle" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="New doodle">
+            <button className="modal-x" onClick={() => setCreating(false)} aria-label="Close">×</button>
             <h3>New doodle</h3>
+            <div className="lbl">1. Pick a shape</div>
             <div className="size-grid">
               {SIZES.map((s) => (
-                <div key={s.id} className="size-card">
-                  <div className="size-shape" style={{ aspectRatio: `${s.w}/${s.h}` }} />
+                <button key={s.id} className={`size-card ${shape === s.id ? "on" : ""}`} onClick={() => setShape(s.id)}
+                  onDoubleClick={() => create(s.w, s.h, panelCount)} aria-pressed={shape === s.id}>
+                  <span className="size-shape" style={{ aspectRatio: `${s.w}/${s.h}` }} />
                   <b>{s.label}</b>
                   <span className="muted small">{s.w}×{s.h}</span>
-                  <div className="seg small">
-                    {[0, 1, 2, 3].map((n) => <button key={n} onClick={() => create(s.w, s.h, n)}>{n ? `${n}▦` : "blank"}</button>)}
-                  </div>
-                </div>
+                </button>
               ))}
             </div>
-            <p className="muted small">Pick a shape and how many panels to start with — you can change panels any time.</p>
+            <div className="lbl">2. How many panels?</div>
+            <div className="panel-pick">
+              {[0, 1, 2, 3, 4].map((n) => (
+                <button key={n} className={panelCount === n ? "on" : ""} onClick={() => setPanelCount(n)}>
+                  <span className={`pp-icon ${n === 4 ? "grid" : ""}`} aria-hidden>
+                    {n === 0 ? <i className="blank" /> : Array.from({ length: n }, (_, k) => <i key={k} />)}
+                  </span>
+                  {n === 0 ? "Blank" : n === 4 ? "2 × 2" : `${n} panel${n > 1 ? "s" : ""}`}
+                </button>
+              ))}
+            </div>
+            <button className="primary big create-btn" onClick={() => { const s = SIZES.find((x) => x.id === shape)!; create(s.w, s.h, panelCount); }}>
+              ✨ Create doodle
+            </button>
+            <p className="muted small">You can change the panels, size and everything else later.</p>
           </div>
         </div>
       )}
