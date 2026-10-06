@@ -69,7 +69,16 @@ export function Outliner({ book, activeId, onOpen, onScene }: { book: Book; acti
     });
     onOpen(id);
   };
-  const addPart = () => update((b) => { b.parts.push({ id: uid(6), title: `Part ${b.parts.length + 1}` }); });
+  const addPart = () => {
+    const id = uid(6);
+    update((b) => { b.parts.push({ id, title: `Part ${b.parts.length + 1}` }); });
+    setEditingPart(id); // ask for a name straight away
+  };
+  const renamePart = (id: string, v: string) => update((b) => { const p = b.parts.find((x) => x.id === id); if (p) p.title = v.trim() || p.title; });
+  const deletePart = (id: string) => update((b) => {
+    if (b.parts.length <= 1 || b.chapters.some((c) => c.partId === id)) return;
+    b.parts = b.parts.filter((x) => x.id !== id);
+  });
 
   return (
     <nav className="outliner">
@@ -80,11 +89,21 @@ export function Outliner({ book, activeId, onOpen, onScene }: { book: Book; acti
             return (
               <section key={p.id} className="ol-part">
                 {editingPart === p.id ? (
-                  <input autoFocus className="ol-part-title" defaultValue={p.title}
-                    onBlur={(e) => { const v = e.target.value; update((b) => { b.parts.find((x) => x.id === p.id)!.title = v; }); setEditingPart(null); }}
-                    onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+                  <div className="ol-part-edit">
+                    <input autoFocus className="ol-part-title" defaultValue={p.title} placeholder="Name this part, e.g. Part Three · College Days"
+                      onFocus={(e) => e.target.select()}
+                      onBlur={(e) => { renamePart(p.id, e.target.value); setEditingPart(null); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingPart(null); }} />
+                    <span className="hint">Press Enter to save</span>
+                  </div>
                 ) : (
-                  <h5 onDoubleClick={() => setEditingPart(p.id)} title="Double-click to rename">{p.title}</h5>
+                  <div className="ol-part-head">
+                    <h5 onClick={() => setEditingPart(p.id)} title="Click to rename">{p.title}</h5>
+                    <button className="icon" onClick={() => setEditingPart(p.id)} title="Rename part" aria-label={`Rename ${p.title}`}>✎</button>
+                    {chs.length === 0 && book.parts.length > 1 && (
+                      <button className="icon" onClick={() => deletePart(p.id)} title="Remove this empty part" aria-label={`Remove ${p.title}`}>×</button>
+                    )}
+                  </div>
                 )}
                 <ul>
                   {chs.map((ch) => (

@@ -2,14 +2,12 @@ import { useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import { ACCESSORIES, AGES, EXPRESSIONS, HAIR_STYLES, OUTFITS, POSES, PRINTS, type Book, type Character, type Expression, type Pose } from "../types.ts";
 import { useStore } from "../store.ts";
 import { CharacterAvatar, CharacterRig, RIG_H, RIG_W } from "../doodle/rig.tsx";
-import { THEMES, THEME_LIST } from "../doodle/theme.ts";
+import { THEMES, THEME_LIST, isMonochrome } from "../doodle/theme.ts";
 import { CastMapSvg, MAP_H, MAP_W } from "./CastMapSvg.tsx";
 import { api } from "../lib/api.ts";
 import { uid } from "../lib/util.ts";
 
-const SKINS = ["#f6d7b8", "#eac09a", "#e2b088", "#d9a77b", "#c99167", "#b47a50", "#8d5a3a", "#6b4128"];
-const HAIRS = ["#16100c", "#2b2118", "#4a3020", "#7a4a2a", "#b07a3a", "#d9b26a", "#8a8a8a", "#e8e4dc"];
-const COLORS = ["#ffffff", "#6fa3ff", "#8f7bd8", "#a77df2", "#c2477a", "#e05a8a", "#f2a65a", "#ffc46b", "#7bbf6a", "#4aa58a", "#53b3c9", "#3d3a5c", "#e8e2d0", "#d65a5a", "#2e2b45"];
+import { COLORS, HAIRS, SKINS } from "../doodle/swatches.ts";
 
 export function CastPage() {
   const book = useStore((s) => s.book)!;
@@ -52,7 +50,7 @@ function Characters({ book }: { book: Book }) {
     const id = uid(6);
     update((b) => {
       b.characters.push({
-        id, name: "New character", aliases: [], role: "", color: "#a77df2",
+        id, name: "New character", aliases: [], role: "", color: "#ff5a3c",
         dna: { age: "adult", build: "average", skin: "#e2b088", hair: "short", hairColor: "#2b2118", outfit: "tshirt", outfitColor: "#8f7bd8", bottomColor: "#3d3a5c", print: "none", accessories: [], signature: "" },
       });
     });
@@ -87,6 +85,12 @@ function Characters({ book }: { book: Book }) {
               <CharacterRig dna={c.dna} pose={pose} expression={expr} theme={theme} />
             </svg>
             <div className="seg wrap">{THEME_LIST.map((t) => <button key={t.id} className={themeId === t.id ? "on" : ""} onClick={() => setThemeId(t.id)}>{t.name}</button>)}</div>
+            {isMonochrome(themeId) && (
+              <div className="mono-hint">
+                🎨 <b>{THEMES[themeId].name}</b> shows every colour as a {themeId === "purple-ink" ? "purple" : "grey"} tint, so colour changes look subtle here.
+                <button onClick={() => setThemeId("storybook")}>Preview in full colour</button>
+              </div>
+            )}
             <div className="lbl">Try a pose</div>
             <div className="chips small">{POSES.map((p) => <button key={p} className={pose === p ? "on" : ""} onClick={() => setPose(p)}>{p}</button>)}</div>
             <div className="lbl">Try an expression</div>

@@ -224,6 +224,13 @@ function toElements(scene: z.infer<typeof SceneSchema>, prev: DoodleEl[]): Doodl
     }
   }
   enforceCharacterScale([...out.values()]);
+  // Keep hand-made styling (colours, look changes, opacity, locks) on elements the AI kept.
+  const KEEP = ["look", "fill", "textColor", "stroke", "palette", "opacity", "locked", "hidden"] as const;
+  for (const [id, el] of out) {
+    const old = prevById.get(id) as Record<string, unknown> | undefined;
+    if (!old || old.type !== el.type) continue;
+    for (const k of KEEP) if (old[k] !== undefined && (el as unknown as Record<string, unknown>)[k] === undefined) (el as unknown as Record<string, unknown>)[k] = old[k];
+  }
   const ordered: DoodleEl[] = [];
   for (const id of scene.order) {
     const el = out.get(id);

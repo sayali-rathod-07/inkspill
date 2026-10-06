@@ -128,7 +128,7 @@ app.post("/api/books", requireUser, wrap(async (req, res) => {
   const book: Book = {
     id, ownerId: u.id, visibility: "public",
     title: String(req.body?.title || "Untitled Chronicles").slice(0, 120), subtitle: "", author: u.displayName, dedication: "",
-    theme: "purple-ink", paper: "lavender", trim: "6x9", characters: [], parts: [{ id: partId, title: "Part One" }],
+    theme: "storybook", paper: "cream", trim: "6x9", characters: [], parts: [{ id: partId, title: "Part One" }],
     chapters: [{ id: nanoid(8), partId, title: "Chapter One", status: "draft", blocks: [{ id: nanoid(8), type: "text", text: "" }] }],
     doodles: {}, cast: { inFrontMatter: false, nodes: [], edges: [], groups: [] }, updatedAt: Date.now(),
   };

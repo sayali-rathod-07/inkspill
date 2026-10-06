@@ -1,7 +1,7 @@
 import { memo, useId, useMemo, type ReactNode } from "react";
 import type { ArtEl, BubbleEl, Character, Doodle, DoodleEl, StrokeEl } from "../types.ts";
 import { CharacterRig, RIG_H, RIG_W } from "./rig.tsx";
-import { THEMES, mix, themeArt, tokenColor, type Theme } from "./theme.ts";
+import { THEMES, mix, themeArt, tokenColor, withPalette, type Theme } from "./theme.ts";
 import { wrapText } from "../lib/textwrap.ts";
 import { safeImage, sanitizeSvg } from "./sanitize.ts";
 
@@ -49,7 +49,7 @@ function BubbleText({ el, theme, color, maxW, maxH, cx, cy }: { el: BubbleEl; th
   if (el.kind === "sfx") {
     return (
       <text x={cx} y={y0} textAnchor="middle" dominantBaseline="central" fontFamily={f.family} fontSize={fs} letterSpacing={fs * 0.04}
-        fill={theme.accent} stroke={theme.ink} strokeWidth={Math.max(3, fs * 0.09)} paintOrder="stroke" strokeLinejoin="round">
+        fill={el.textColor || theme.accent} stroke={el.stroke || theme.ink} strokeWidth={Math.max(3, fs * 0.09)} paintOrder="stroke" strokeLinejoin="round">
         {lines.map((ln, i) => <tspan key={i} x={cx} y={y0 + i * lh}>{ln}</tspan>)}
       </text>
     );
@@ -63,7 +63,8 @@ function BubbleText({ el, theme, color, maxW, maxH, cx, cy }: { el: BubbleEl; th
 
 export function BubbleView({ el, theme }: { el: BubbleEl; theme: Theme }) {
   const { w, h } = el;
-  const ink = theme.ink, paper = theme.paper;
+  const ink = el.stroke || theme.ink, paper = el.fill || theme.paper;
+  const textInk = el.textColor || theme.ink;
   const sw = 3.2;
   const tx = el.tailX - el.x, ty = el.tailY - el.y;
   const cx = w / 2, cy = h / 2;
@@ -83,7 +84,7 @@ export function BubbleView({ el, theme }: { el: BubbleEl; theme: Theme }) {
       const tip = [m[0] + (tx - m[0]) * 0.25, m[1] + (ty - m[1]) * 0.25];
       parts.push(<path key="seam" d={`M${s1[0]},${s1[1]} L${tip[0]},${tip[1]} L${s2[0]},${s2[1]} Z`} fill={paper} />);
     }
-    parts.push(<BubbleText key="txt" el={el} theme={theme} color={ink} maxW={w - r * 0.7 - 12} maxH={h - 14} cx={cx} cy={cy} />);
+    parts.push(<BubbleText key="txt" el={el} theme={theme} color={textInk} maxW={w - r * 0.7 - 12} maxH={h - 14} cx={cx} cy={cy} />);
   } else if (el.kind === "thought") {
     const n = Math.max(8, Math.round((Math.PI * (w + h)) / 2 / (Math.min(w, h) * 0.32)));
     let d = "";
@@ -107,7 +108,7 @@ export function BubbleView({ el, theme }: { el: BubbleEl; theme: Theme }) {
       });
     }
     parts.push(<path key="b" d={d + "Z"} fill={paper} stroke={ink} strokeWidth={sw} strokeLinejoin="round" />);
-    parts.push(<BubbleText key="txt" el={el} theme={theme} color={ink} maxW={w * 0.72} maxH={h * 0.7} cx={cx} cy={cy} />);
+    parts.push(<BubbleText key="txt" el={el} theme={theme} color={textInk} maxW={w * 0.72} maxH={h * 0.7} cx={cx} cy={cy} />);
   } else if (el.kind === "shout") {
     const n = 22;
     let d = "";
@@ -121,10 +122,10 @@ export function BubbleView({ el, theme }: { el: BubbleEl; theme: Theme }) {
       parts.push(<path key="t" d={`M${b1[0]},${b1[1]} L${tx},${ty} L${b2[0]},${b2[1]} Z`} fill={paper} stroke={ink} strokeWidth={sw} strokeLinejoin="round" />);
     }
     parts.push(<path key="b" d={d + "Z"} fill={paper} stroke={ink} strokeWidth={sw} strokeLinejoin="round" />);
-    parts.push(<BubbleText key="txt" el={el} theme={theme} color={ink} maxW={w * 0.66} maxH={h * 0.62} cx={cx} cy={cy} />);
+    parts.push(<BubbleText key="txt" el={el} theme={theme} color={textInk} maxW={w * 0.66} maxH={h * 0.62} cx={cx} cy={cy} />);
   } else if (el.kind === "caption") {
-    parts.push(<rect key="b" x={0} y={0} width={w} height={h} fill={mix(theme.soft, theme.paper, 0.2)} stroke={ink} strokeWidth={sw} />);
-    parts.push(<BubbleText key="txt" el={el} theme={theme} color={ink} maxW={w - 20} maxH={h - 8} cx={cx} cy={cy} />);
+    parts.push(<rect key="b" x={0} y={0} width={w} height={h} fill={el.fill || mix(theme.soft, theme.paper, 0.2)} stroke={ink} strokeWidth={sw} />);
+    parts.push(<BubbleText key="txt" el={el} theme={theme} color={textInk} maxW={w - 20} maxH={h - 8} cx={cx} cy={cy} />);
   } else if (el.kind === "label") {
     if (!el.noTail) {
       const sx = tx < 0 ? 0 : tx > w ? w : cx;
@@ -139,15 +140,15 @@ export function BubbleView({ el, theme }: { el: BubbleEl; theme: Theme }) {
         </g>,
       );
     }
-    parts.push(<BubbleText key="txt" el={el} theme={theme} color={ink} maxW={w} maxH={h * 1.2} cx={cx} cy={cy} />);
+    parts.push(<BubbleText key="txt" el={el} theme={theme} color={textInk} maxW={w} maxH={h * 1.2} cx={cx} cy={cy} />);
   } else {
-    parts.push(<BubbleText key="txt" el={el} theme={theme} color={ink} maxW={w} maxH={h * 1.2} cx={cx} cy={cy} />);
+    parts.push(<BubbleText key="txt" el={el} theme={theme} color={textInk} maxW={w} maxH={h * 1.2} cx={cx} cy={cy} />);
   }
   return <>{parts}</>;
 }
 
 const ArtView = memo(function ArtView({ el, theme }: { el: ArtEl; theme: Theme }) {
-  const html = useMemo(() => themeArt(sanitizeSvg(el.svg), theme), [el.svg, theme]);
+  const html = useMemo(() => themeArt(sanitizeSvg(el.svg), withPalette(theme, el.palette)), [el.svg, theme, el.palette]);
   return <svg x={0} y={0} width={el.w} height={el.h} viewBox={`0 0 ${el.vbW} ${el.vbH}`} preserveAspectRatio="none" overflow="visible" dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
@@ -155,16 +156,23 @@ function StrokeView({ el, theme }: { el: StrokeEl; theme: Theme }) {
   const sx = el.w0 ? el.w / el.w0 : 1, sy = el.h0 ? el.h / el.h0 : 1;
   const p: string[] = [];
   for (let i = 0; i < el.points.length; i += 2) p.push(`${el.points[i] * sx},${el.points[i + 1] * sy}`);
-  return <polyline points={p.join(" ")} fill="none" stroke={tokenColor(theme, el.color.toUpperCase())} strokeWidth={el.width} strokeLinecap="round" strokeLinejoin="round" />;
+  const color = el.color.startsWith("#") ? el.color : tokenColor(theme, el.color.toUpperCase());
+  return <polyline points={p.join(" ")} fill="none" stroke={color} strokeWidth={el.width} strokeLinecap="round" strokeLinejoin="round" />;
 }
 
-export function ElementView({ el, theme, cast, filterId }: { el: DoodleEl; theme: Theme; cast: Map<string, Character>; filterId: string }) {
+export function ElementView(props: { el: DoodleEl; theme: Theme; cast: Map<string, Character>; filterId: string }) {
+  const { el } = props;
   if (el.hidden) return null;
+  const inner = <ElementInner {...props} />;
+  return el.opacity != null && el.opacity < 1 ? <g opacity={Math.max(0.05, el.opacity)}>{inner}</g> : inner;
+}
+
+function ElementInner({ el, theme, cast, filterId }: { el: DoodleEl; theme: Theme; cast: Map<string, Character>; filterId: string }) {
   const rot = el.rotation ? `rotate(${el.rotation} ${el.w / 2} ${el.h / 2})` : "";
   const tf = `translate(${el.x} ${el.y}) ${rot}`;
   switch (el.type) {
     case "panel":
-      return <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="none" stroke={theme.ink} strokeWidth={5} strokeLinejoin="round" filter={`url(#${filterId}-wob)`} />;
+      return <rect x={el.x} y={el.y} width={el.w} height={el.h} fill={el.fill || "none"} stroke={el.stroke || theme.ink} strokeWidth={5} strokeLinejoin="round" filter={`url(#${filterId}-wob)`} />;
     case "character": {
       const ch = cast.get(el.charId);
       if (!ch) return <g transform={tf}><rect width={el.w} height={el.h} fill="none" stroke={theme.accent} strokeDasharray="6 6" /><text x={el.w / 2} y={el.h / 2} textAnchor="middle" fill={theme.accent} fontFamily="Patrick Hand">missing character</text></g>;
@@ -172,7 +180,7 @@ export function ElementView({ el, theme, cast, filterId }: { el: DoodleEl; theme
       return (
         <g transform={tf}>
           <g transform={`scale(${(flip ? -1 : 1) * (el.w / RIG_W)} ${el.h / RIG_H}) ${flip ? `translate(${-RIG_W} 0)` : ""}`} filter={`url(#${filterId}-wob)`}>
-            <CharacterRig dna={ch.dna} pose={el.pose} expression={el.expression} theme={theme} />
+            <CharacterRig dna={el.look ? { ...ch.dna, ...el.look } : ch.dna} pose={el.pose} expression={el.expression} theme={theme} />
           </g>
         </g>
       );
@@ -191,6 +199,7 @@ export function ElementView({ el, theme, cast, filterId }: { el: DoodleEl; theme
 }
 
 export function backgroundFill(d: Doodle, theme: Theme) {
+  if (d.background.startsWith("#")) return d.background;
   return d.background === "white" ? "#ffffff" : d.background === "soft" ? mix(theme.soft, theme.paper, 0.5) : d.background === "paper" ? theme.paper : "none";
 }
 

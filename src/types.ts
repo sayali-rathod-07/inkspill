@@ -1,6 +1,6 @@
 // Shared data model — imported by both the web app and the server.
 
-export type ThemeId = "purple-ink" | "sunday-strip" | "line-sketch" | "watercolor";
+export type ThemeId = "storybook" | "purple-ink" | "sunday-strip" | "line-sketch" | "watercolor";
 export type PaperId = "lavender" | "cream" | "newsprint" | "parchment";
 
 export const POSES = ["stand", "wave", "armsUp", "point", "run", "hold", "sit", "fall", "shrug", "hug"] as const;
@@ -64,15 +64,19 @@ interface Box {
   rotation: number;
   locked?: boolean;
   hidden?: boolean;
+  /** 0–1, default 1. */
+  opacity?: number;
 }
 
-export interface PanelEl extends Box { type: "panel" }
+export interface PanelEl extends Box { type: "panel"; stroke?: string; fill?: string }
 export interface CharacterEl extends Box {
   type: "character";
   charId: string;
   pose: Pose;
   expression: Expression;
   facing: "left" | "right";
+  /** Changes to this character's look in this doodle only (on top of their saved Cast look). */
+  look?: Partial<CharacterDNA>;
 }
 export interface BubbleEl extends Box {
   type: "bubble";
@@ -82,6 +86,9 @@ export interface BubbleEl extends Box {
   tailX: number;
   tailY: number;
   noTail?: boolean;
+  fill?: string;
+  textColor?: string;
+  stroke?: string;
 }
 /** Hand-drawn vector art (AI-drawn props, stickers). Colours use theme tokens: INK, ACCENT, SOFT, PAPER, WARM. */
 export interface ArtEl extends Box {
@@ -90,6 +97,8 @@ export interface ArtEl extends Box {
   svg: string;
   vbW: number;
   vbH: number;
+  /** Recolour the drawing's palette tokens for this element only. */
+  palette?: Partial<Record<"INK" | "ACCENT" | "SOFT" | "PAPER" | "WARM", string>>;
 }
 export interface ImageEl extends Box { type: "image"; src: string }
 export interface StrokeEl extends Box {
@@ -97,7 +106,8 @@ export interface StrokeEl extends Box {
   points: number[]; // local coords, flat [x0,y0,x1,y1,...]
   w0: number;
   h0: number;
-  color: "ink" | "accent" | "soft" | "paper" | "warm";
+  /** A palette token (ink, accent, soft, paper, warm) or any #hex colour. */
+  color: string;
   width: number;
 }
 
@@ -116,7 +126,8 @@ export interface Doodle {
   theme: ThemeId;
   width: number;
   height: number;
-  background: "paper" | "white" | "soft" | "none";
+  /** "paper" | "white" | "soft" | "none" or any #hex colour. */
+  background: string;
   elements: DoodleEl[];
   sourceText?: string;
   history: DoodleHistoryEntry[];

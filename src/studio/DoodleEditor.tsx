@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import {
-  EXPRESSIONS, POSES, type BubbleEl, type BubbleKind, type Character, type Doodle, type DoodleEl, type Expression, type Pose, type ThemeId,
+  type BubbleKind, type Character, type CharacterDNA, type Doodle, type DoodleEl, type ThemeId,
 } from "../types.ts";
 import { ElementView, InkFilters, backgroundFill } from "../doodle/DoodleSvg.tsx";
 import { THEMES, THEME_LIST, tokenColor } from "../doodle/theme.ts";
@@ -12,6 +12,7 @@ import { clamp, uid } from "../lib/util.ts";
 import { download, fontsReady, standaloneSvg, svgToPng } from "../lib/fonts.ts";
 import { clearWrapCache } from "../lib/textwrap.ts";
 import { AiPanel } from "./AiPanel.tsx";
+import { DoodleSettings, Inspector } from "./Inspector.tsx";
 
 type Tool = "select" | "pen" | "eraser";
 type Drag =
@@ -22,8 +23,6 @@ type Drag =
   | { kind: "pen"; points: number[] }
   | { kind: "erase" };
 
-const POSE_LABEL: Record<Pose, string> = { stand: "Stand", wave: "Wave", armsUp: "Arms up", point: "Point", run: "Run", hold: "Carry", sit: "Sit", fall: "Fall", shrug: "Shrug", hug: "Open arms" };
-const EXPR_EMOJI: Record<Expression, string> = { neutral: "😐", happy: "🙂", laugh: "😆", sad: "🙁", crying: "😭", angry: "😠", shocked: "😮", scared: "😱", smirk: "😏", sleepy: "😴", love: "😍", determined: "😤" };
 const BUBBLES: { kind: BubbleKind; label: string; text: string; w: number; h: number; fs: number }[] = [
   { kind: "speech", label: "Speech", text: "Say something!", w: 240, h: 110, fs: 28 },
   { kind: "thought", label: "Thought", text: "Hmm…", w: 220, h: 140, fs: 28 },
@@ -39,16 +38,17 @@ const rotate = (x: number, y: number, deg: number): [number, number] => {
   return [x * c - y * s, x * s + y * c];
 };
 
-export function DoodleEditor({ doodle, cast, onChange, sourceHint }: {
+export function DoodleEditor({ doodle, cast, onChange, onSaveLook, sourceHint }: {
   doodle: Doodle;
   cast: Character[];
   onChange: (fn: (d: Doodle) => void) => void;
+  onSaveLook: (charId: string, dna: CharacterDNA) => void;
   sourceHint?: string;
 }) {
   const [els, setEls] = useState<DoodleEl[]>(doodle.elements);
   const [sel, setSel] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>("select");
-  const [penColor, setPenColor] = useState<"ink" | "accent" | "soft" | "warm" | "paper">("ink");
+  const [penColor, setPenColor] = useState<string>("ink");
   const [penWidth, setPenWidth] = useState(5);
   const [menu, setMenu] = useState<null | "char" | "bubble" | "sticker" | "panels" | "export">(null);
   const [past, setPast] = useState<DoodleEl[][]>([]);
@@ -347,18 +347,18 @@ export function DoodleEditor({ doodle, cast, onChange, sourceHint }: {
     return (
       <g data-editor-only>
         <g transform={`translate(${s.x} ${s.y}) rotate(${s.rotation} ${s.w / 2} ${s.h / 2})`}>
-          <rect x={0} y={0} width={s.w} height={s.h} fill="none" stroke="#7c4dcc" strokeWidth={2} strokeDasharray="6 5" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+          <rect x={0} y={0} width={s.w} height={s.h} fill="none" stroke="#ff5a3c" strokeWidth={2} strokeDasharray="6 5" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           {!s.locked && (
             <>
               {corners.map(([cx, cy]) => (
-                <rect key={`${cx}${cy}`} x={cx * s.w - hs / 2} y={cy * s.h - hs / 2} width={hs} height={hs} rx={3} fill="#fff" stroke="#7c4dcc" strokeWidth={2}
+                <rect key={`${cx}${cy}`} x={cx * s.w - hs / 2} y={cy * s.h - hs / 2} width={hs} height={hs} rx={3} fill="#fff" stroke="#ff5a3c" strokeWidth={2}
                   style={{ cursor: (cx === cy ? "nwse-resize" : "nesw-resize") }}
                   onPointerDown={(e) => startHandle(e, { kind: "resize", id: s.id, corner: [cx, cy], orig: structuredClone(s) })} />
               ))}
               {s.type !== "panel" && (
                 <>
-                  <line x1={s.w / 2} y1={0} x2={s.w / 2} y2={-hs * 2.6} stroke="#7c4dcc" strokeWidth={2} pointerEvents="none" />
-                  <circle cx={s.w / 2} cy={-hs * 2.8} r={hs * 0.7} fill="#7c4dcc" stroke="#fff" strokeWidth={2} style={{ cursor: "grab" }}
+                  <line x1={s.w / 2} y1={0} x2={s.w / 2} y2={-hs * 2.6} stroke="#ff5a3c" strokeWidth={2} pointerEvents="none" />
+                  <circle cx={s.w / 2} cy={-hs * 2.8} r={hs * 0.7} fill="#ff5a3c" stroke="#fff" strokeWidth={2} style={{ cursor: "grab" }}
                     onPointerDown={(e) => startHandle(e, { kind: "rotate", id: s.id, orig: structuredClone(s) })} />
                 </>
               )}
@@ -366,7 +366,7 @@ export function DoodleEditor({ doodle, cast, onChange, sourceHint }: {
           )}
         </g>
         {s.type === "bubble" && !["caption", "sfx"].includes(s.kind) && !s.locked && (
-          <circle cx={s.tailX} cy={s.tailY} r={hs * 0.8} fill="#ffcf3f" stroke="#3a2763" strokeWidth={2} style={{ cursor: "crosshair" }}
+          <circle cx={s.tailX} cy={s.tailY} r={hs * 0.8} fill="#ffcf3f" stroke="#1d1b2e" strokeWidth={2} style={{ cursor: "crosshair" }}
             onPointerDown={(e) => startHandle(e, { kind: "tail", id: s.id })}>
             <title>Drag to point the tail</title>
           </circle>
@@ -393,6 +393,9 @@ export function DoodleEditor({ doodle, cast, onChange, sourceHint }: {
               {(["ink", "accent", "soft", "warm", "paper"] as const).map((c) => (
                 <button key={c} className={`swatch ${penColor === c ? "on" : ""}`} style={{ background: tokenColor(theme, c.toUpperCase()) }} onClick={() => setPenColor(c)} title={c} />
               ))}
+              <label className={`swatch custom ${penColor.startsWith("#") ? "on" : ""}`} title="Any colour" style={penColor.startsWith("#") ? { background: penColor } : undefined}>
+                <input type="color" value={penColor.startsWith("#") ? penColor : "#ff5a3c"} onChange={(e) => setPenColor(e.target.value)} />
+              </label>
               <input type="range" min={2} max={24} value={penWidth} onChange={(e) => setPenWidth(+e.target.value)} title="Pen size" />
             </div>
           )}
@@ -493,26 +496,22 @@ export function DoodleEditor({ doodle, cast, onChange, sourceHint }: {
               </g>
             ))}
             {penPreview && (
-              <polyline data-editor-only points={penPreview.join(" ")} fill="none" stroke={tokenColor(theme, penColor.toUpperCase())} strokeWidth={penWidth} strokeLinecap="round" strokeLinejoin="round" />
+              <polyline data-editor-only points={penPreview.join(" ")} fill="none" stroke={penColor.startsWith("#") ? penColor : tokenColor(theme, penColor.toUpperCase())} strokeWidth={penWidth} strokeLinecap="round" strokeLinejoin="round" />
             )}
             {chrome}
           </svg>
           <p className="canvas-hint">
-            {tool === "select" ? "Click to select · drag to move · corners resize · purple dot rotates · yellow dot aims a bubble's tail · ⌘Z undo · ⌘D duplicate · [ ] layer order" : tool === "pen" ? "Draw freehand. Strokes are vector — select them later to move or resize." : "Drag over pen strokes to erase them."}
+            {tool === "select" ? "Click to select · drag to move · corners resize · coral dot rotates · yellow dot aims a bubble's tail · ⌘Z undo · ⌘D duplicate · [ ] layer order" : tool === "pen" ? "Draw freehand. Strokes are vector — select them later to move or resize." : "Drag over pen strokes to erase them."}
           </p>
         </div>
       </div>
 
       <aside className="studio-inspector">
         {selected ? (
-          <Inspector el={selected} cast={cast} theme={doodle.theme} textRef={textRef}
+          <Inspector el={selected} doodle={doodle} cast={cast} textRef={textRef} onDoodle={onChange} onSaveLook={onSaveLook}
             onPatch={(fn) => patch(selected.id, fn)} onRemove={() => remove(selected.id)} onDuplicate={() => duplicate(selected.id)} onOrder={(d) => reorder(selected.id, d)} />
         ) : (
-          <div className="insp-empty">
-            <h4>Doodle</h4>
-            <label>Title<input value={doodle.title} onChange={(e) => onChange((d) => { d.title = e.target.value; })} /></label>
-            <p className="muted small">Select anything on the canvas to edit it — poses, expressions, bubble text, colours. Or ask the AI on the left.</p>
-          </div>
+          <DoodleSettings doodle={doodle} onDoodle={onChange} />
         )}
         <Layers els={els} sel={sel} cast={castMap} onSelect={(id) => { setSel(id); setTool("select"); }}
           onToggle={(id, key) => patch(id, (e) => ({ ...e, [key]: !e[key] }))} />
@@ -547,88 +546,6 @@ function Layers({ els, sel, cast, onSelect, onToggle }: {
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function Inspector({ el, cast, theme, textRef, onPatch, onRemove, onDuplicate, onOrder }: {
-  el: DoodleEl; cast: Character[]; theme: ThemeId; textRef: React.RefObject<HTMLTextAreaElement | null>;
-  onPatch: (fn: (e: DoodleEl) => DoodleEl) => void; onRemove: () => void; onDuplicate: () => void; onOrder: (d: -1 | 1 | "top" | "bottom") => void;
-}) {
-  const t = THEMES[theme];
-  // Local text state so typing doesn't create one undo step per keystroke.
-  const [text, setText] = useState(el.type === "bubble" ? el.text : "");
-  useEffect(() => { if (el.type === "bubble") setText(el.text); }, [el.id, el.type === "bubble" ? el.text : ""]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <div className="insp">
-      {el.type === "character" && (
-        <>
-          <h4>Character</h4>
-          <select value={el.charId} onChange={(e) => onPatch((x) => ({ ...x, charId: e.target.value }))}>
-            {cast.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <div className="lbl">Pose</div>
-          <div className="chips">
-            {POSES.map((p) => <button key={p} className={el.pose === p ? "on" : ""} onClick={() => onPatch((x) => ({ ...x, pose: p }))}>{POSE_LABEL[p]}</button>)}
-          </div>
-          <div className="lbl">Expression</div>
-          <div className="chips emoji">
-            {EXPRESSIONS.map((x) => {
-              const dna = cast.find((c) => c.id === el.charId)?.dna;
-              return (
-                <button key={x} className={el.expression === x ? "on" : ""} title={x} onClick={() => onPatch((e) => ({ ...e, expression: x }))}>
-                  {dna ? <CharacterAvatar dna={dna} theme={t} size={34} expression={x} /> : EXPR_EMOJI[x]}
-                </button>
-              );
-            })}
-          </div>
-          <button onClick={() => onPatch((x) => ({ ...x, facing: (x as { facing: string }).facing === "left" ? "right" : "left" }) as DoodleEl)}>⇋ Flip direction</button>
-        </>
-      )}
-      {el.type === "bubble" && (
-        <>
-          <h4>Bubble</h4>
-          <select value={el.kind} onChange={(e) => onPatch((x) => ({ ...x, kind: e.target.value as BubbleKind }))}>
-            {BUBBLES.map((b) => <option key={b.kind} value={b.kind}>{b.label}</option>)}
-          </select>
-          <textarea ref={textRef} rows={3} value={text} onChange={(e) => setText(e.target.value)}
-            onBlur={() => text !== el.text && onPatch((x) => ({ ...x, text }))}
-            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) (e.target as HTMLTextAreaElement).blur(); }} />
-          <label className="row">Size
-            <input type="range" min={12} max={120} value={el.fontSize} onChange={(e) => onPatch((x) => ({ ...x, fontSize: +e.target.value }))} />
-            <span className="small">{el.fontSize}</span>
-          </label>
-          {!["caption", "sfx"].includes(el.kind) && (
-            <label className="row"><input type="checkbox" checked={!el.noTail} onChange={(e) => onPatch((x) => ({ ...x, noTail: !e.target.checked }))} /> Show tail / arrow</label>
-          )}
-        </>
-      )}
-      {el.type === "art" && (
-        <>
-          <h4>Drawing</h4>
-          <label>Name<input value={el.label} onChange={(e) => onPatch((x) => ({ ...x, label: e.target.value }))} /></label>
-          <p className="muted small">Want it different? Keep it selected and describe the change in the AI box — e.g. “make this a pressure cooker”.</p>
-        </>
-      )}
-      {el.type === "image" && <h4>Image</h4>}
-      {el.type === "stroke" && <h4>Pen stroke</h4>}
-      {el.type === "panel" && <h4>Panel frame</h4>}
-
-      {el.type !== "panel" && (
-        <label className="row">Rotate
-          <input type="range" min={-180} max={180} value={el.rotation} onChange={(e) => onPatch((x) => ({ ...x, rotation: +e.target.value }))} />
-          <span className="small">{el.rotation}°</span>
-        </label>
-      )}
-      <div className="btn-row">
-        <button onClick={() => onOrder("top")} title="Bring to front">⤒</button>
-        <button onClick={() => onOrder(1)} title="Forward ( ] )">↑</button>
-        <button onClick={() => onOrder(-1)} title="Backward ( [ )">↓</button>
-        <button onClick={() => onOrder("bottom")} title="Send to back">⤓</button>
-        <button onClick={onDuplicate} title="Duplicate (⌘D)">⧉</button>
-        <button className="danger" onClick={onRemove} title="Delete">🗑</button>
-      </div>
     </div>
   );
 }

@@ -100,7 +100,8 @@ export function StudioPage() {
       </nav>
 
       {current ? (
-        <DoodleEditor key={current.id} doodle={current} cast={book.characters} onChange={onChange} />
+        <DoodleEditor key={current.id} doodle={current} cast={book.characters} onChange={onChange}
+          onSaveLook={(charId, dna) => update((b) => { const c = b.characters.find((x) => x.id === charId); if (c) c.dna = dna; })} />
       ) : (
         <div className="studio-empty">
           <h2>Doodle Studio</h2>

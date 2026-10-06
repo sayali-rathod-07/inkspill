@@ -35,8 +35,13 @@ export const mix = (a: string, b: string, t: number) => {
 };
 
 export const THEMES: Record<ThemeId, Theme> = {
+  storybook: {
+    id: "storybook", name: "Storybook Colour", blurb: "Full colour with soft ink lines — every colour shows",
+    ink: "#2b2433", accent: "#ff5a3c", soft: "#fde7c8", paper: "#fffdf8", warm: "#ffc83d",
+    fill: (hex) => mix(hex, "#fffdf8", 0.06), fillOpacity: 1, wobble: 1.3,
+  },
   "purple-ink": {
-    id: "purple-ink", name: "Purple Ink", blurb: "Your book's lavender-and-ink look",
+    id: "purple-ink", name: "Purple Ink", blurb: "Everything in shades of purple (colours become purple tints)",
     ink: "#3a2763", accent: "#7c4dcc", soft: "#ddd0f3", paper: "#fbf8ff", warm: "#c7b2ee",
     // Monochrome purple: keep each colour's lightness, swap its hue for lavender.
     fill: (hex) => mix("#5a3d9e", "#fbf8ff", Math.min(1, 0.18 + lum(hex) * 0.9)),
@@ -48,7 +53,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     fill: (hex) => hex, fillOpacity: 1, wobble: 0.6,
   },
   "line-sketch": {
-    id: "line-sketch", name: "Line Sketch", blurb: "Pencil on white, no colour",
+    id: "line-sketch", name: "Line Sketch", blurb: "Pencil on white (colours become greys)",
     ink: "#34343a", accent: "#6b6b75", soft: "#ececf0", paper: "#ffffff", warm: "#dcdce2",
     fill: (hex) => mix("#8a8a94", "#ffffff", Math.min(1, 0.45 + lum(hex) * 0.6)),
     fillOpacity: 1, wobble: 2.2,
@@ -61,6 +66,15 @@ export const THEMES: Record<ThemeId, Theme> = {
 };
 
 export const THEME_LIST = Object.values(THEMES);
+
+/** Styles that replace real colours with tints (so picked colours won't show as-is). */
+export const isMonochrome = (id: ThemeId) => id === "purple-ink" || id === "line-sketch";
+
+/** A theme with some palette tokens swapped (for per-element recolouring). */
+export function withPalette(t: Theme, p?: Partial<Record<"INK" | "ACCENT" | "SOFT" | "PAPER" | "WARM", string>>): Theme {
+  if (!p || !Object.keys(p).length) return t;
+  return { ...t, ink: p.INK ?? t.ink, accent: p.ACCENT ?? t.accent, soft: p.SOFT ?? t.soft, paper: p.PAPER ?? t.paper, warm: p.WARM ?? t.warm };
+}
 
 export const tokenColor = (t: Theme, token: string): string => {
   switch (token.toUpperCase()) {
