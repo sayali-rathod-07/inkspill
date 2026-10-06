@@ -100,10 +100,16 @@ export function themeArt(svg: string, t: Theme): string {
   });
 }
 
-export interface Paper { id: PaperId; name: string; color: string; ink: string; grain: number; fiber: string }
+/** Ready-made page/cover colour sets. Values mirror the .paper-* classes in book.css. */
+export interface Paper { id: PaperId; name: string; color: string; ink: string; accent: string; cover: string; coverText: string }
 export const PAPERS: Record<PaperId, Paper> = {
-  lavender: { id: "lavender", name: "Lavender", color: "#f1ebf9", ink: "#2b2140", grain: 0.07, fiber: "#b9a6dc" },
-  cream: { id: "cream", name: "Cream eggshell", color: "#f8f1e1", ink: "#2c241b", grain: 0.06, fiber: "#d8c8a6" },
-  newsprint: { id: "newsprint", name: "Newsprint", color: "#ecebe6", ink: "#232323", grain: 0.11, fiber: "#b9b8b0" },
-  parchment: { id: "parchment", name: "Vintage parchment", color: "#f0e2c2", ink: "#3a2c1a", grain: 0.13, fiber: "#c9ad78" },
+  cream: { id: "cream", name: "Cream", color: "#f8f1e1", ink: "#2c241b", accent: "#c0532c", cover: "#e8833a", coverText: "#ffffff" },
+  white: { id: "white", name: "Crisp white", color: "#fdfdfb", ink: "#1f1f24", accent: "#ff5a3c", cover: "#ff5a3c", coverText: "#ffffff" },
+  mint: { id: "mint", name: "Mint", color: "#eaf6ef", ink: "#1d2e26", accent: "#13896f", cover: "#1fa37f", coverText: "#ffffff" },
+  sky: { id: "sky", name: "Sky", color: "#eaf2fb", ink: "#1b2738", accent: "#2f6fd6", cover: "#3c7ee6", coverText: "#ffffff" },
+  blush: { id: "blush", name: "Blush pink", color: "#fbecef", ink: "#33202a", accent: "#d14a78", cover: "#e2668f", coverText: "#ffffff" },
+  lavender: { id: "lavender", name: "Lavender", color: "#f3edfa", ink: "#2b2140", accent: "#7c4dcc", cover: "#8a63cf", coverText: "#ffffff" },
+  newsprint: { id: "newsprint", name: "Newsprint", color: "#ecebe6", ink: "#232323", accent: "#444444", cover: "#3d3d3d", coverText: "#ffffff" },
+  parchment: { id: "parchment", name: "Vintage parchment", color: "#efe0bf", ink: "#3a2c1a", accent: "#8a4b1c", cover: "#8b5a2b", coverText: "#fff4dc" },
+  night: { id: "night", name: "Night mode", color: "#1e1c27", ink: "#ebe6f5", accent: "#ffb547", cover: "#2b2840", coverText: "#ffd27a" },
 };

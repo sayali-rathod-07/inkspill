@@ -7,6 +7,7 @@ import { CharacterAvatar } from "../doodle/rig.tsx";
 import { THEMES } from "../doodle/theme.ts";
 import { safeLink } from "../doodle/sanitize.ts";
 import { toEmbed } from "../lib/embed.ts";
+import { designVars } from "./design.ts";
 
 export interface PageHandlers {
   onDoodle?: (doodleId: string) => void;
@@ -23,7 +24,7 @@ export const BookPage = memo(function BookPage({ page, book, side, handlers, ble
   bleed?: number;
 }) {
   const g = pageGeometry(book.trim);
-  const style = { width: g.W + bleed * 2, height: g.H + bleed * 2 };
+  const style = { width: g.W + bleed * 2, height: g.H + bleed * 2, ...designVars(book) };
   if (!page) return <div className="book-page empty" style={style} />;
   const inner = side === "left" ? "right" : "left";
   const pad = {

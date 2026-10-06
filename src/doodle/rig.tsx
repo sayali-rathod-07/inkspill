@@ -304,6 +304,13 @@ function HairBack({ dna, head: [hx, hy], R, c }: { dna: CharacterDNA; head: Pt; 
       return <path {...f} d={`M${hx + R * 0.7},${hy - R * 0.85} Q${hx + R * 1.9},${hy - R * 0.9} ${hx + R * 1.6},${hy + R * 0.6} Q${hx + R * 1.5},${hy + R * 1.2} ${hx + R * 1.8},${hy + R * 1.5} Q${hx + R * 1.05},${hy + R * 1.35} ${hx + R * 1.15},${hy + R * 0.4} Q${hx + R * 1.2},${hy - R * 0.2} ${hx + R * 0.7},${hy - R * 0.45} Z`} />;
     case "bun":
       return <circle {...f} cx={hx + R * 0.15} cy={hy - R * 1.08} r={R * 0.42} />;
+    case "afro":
+      return <g>{Array.from({ length: 13 }, (_, i) => {
+        const a = (i / 13) * Math.PI * 2;
+        return <circle key={i} {...f} cx={hx + Math.cos(a) * R * 1.12} cy={hy - R * 0.32 + Math.sin(a) * R * 1.05} r={R * 0.42} />;
+      })}<ellipse cx={hx} cy={hy - R * 0.32} rx={R * 1.2} ry={R * 1.12} fill={c.hair} /></g>;
+    case "manbun":
+      return <circle {...f} cx={hx + R * 0.55} cy={hy - R * 1.02} r={R * 0.34} />;
     case "curly":
       return <g>{Array.from({ length: 9 }, (_, i) => {
         const a = Math.PI + (i / 8) * Math.PI;
@@ -316,10 +323,13 @@ function HairBack({ dna, head: [hx, hy], R, c }: { dna: CharacterDNA; head: Pt; 
 
 function HairFront({ dna, head: [hx, hy], R, c }: { dna: CharacterDNA; head: Pt; R: number; c: Ctx }) {
   const f = { fill: c.hair, stroke: c.ink, strokeWidth: c.sw, strokeLinejoin: "round" as const };
-  const capBase = (fringeY: number, sideY = 0.1) =>
-    `M${hx - R * 1.03},${hy + R * sideY} C${hx - R * 1.15},${hy - R * 1.25} ${hx + R * 1.15},${hy - R * 1.25} ${hx + R * 1.03},${hy + R * sideY} ` +
+  // Control height chosen so the crown always reaches just above the top of the head.
+  const capBase = (fringeY: number, sideY = 0.1) => {
+    const top = (-1.06 - 0.25 * sideY) / 0.75;
+    return `M${hx - R * 1.03},${hy + R * sideY} C${hx - R * 1.15},${hy + R * top} ${hx + R * 1.15},${hy + R * top} ${hx + R * 1.03},${hy + R * sideY} ` +
     `Q${hx + R * 0.85},${hy - R * 0.25} ${hx + R * 0.45},${hy - R * fringeY} Q${hx + R * 0.1},${hy - R * (fringeY - 0.12)} ${hx - R * 0.15},${hy - R * fringeY} ` +
     `Q${hx - R * 0.6},${hy - R * (fringeY - 0.18)} ${hx - R * 1.03},${hy + R * sideY} Z`;
+  };
   switch (dna.hair) {
     case "bald":
       return <path d={`M${hx - R * 0.4},${hy - R * 0.75} q${R * 0.2},${-R * 0.12} ${R * 0.4},${-R * 0.08}`} stroke={c.t.paper} strokeWidth={c.sw} fill="none" opacity={0.8} strokeLinecap="round" />;
@@ -344,6 +354,80 @@ function HairFront({ dna, head: [hx, hy], R, c }: { dna: CharacterDNA; head: Pt;
     }
     case "curly":
       return <path {...f} d={capBase(0.5, 0)} />;
+    case "crew": {
+      // Close buzz cut that follows the skull.
+      const d = `M${hx - R * 1.02},${hy - R * 0.02} C${hx - R * 1.1},${hy - R * 1.44} ${hx + R * 1.1},${hy - R * 1.44} ${hx + R * 1.02},${hy - R * 0.02} L${hx + R * 0.88},${hy - R * 0.38} Q${hx},${hy - R * 0.62} ${hx - R * 0.88},${hy - R * 0.38} Z`;
+      return <path {...f} d={d} fillOpacity={0.9} />;
+    }
+    case "sidepart":
+      return (
+        <g>
+          <path {...f} d={`M${hx - R * 1.03},${hy + R * 0.05} C${hx - R * 1.12},${hy - R * 1.46} ${hx + R * 1.16},${hy - R * 1.48} ${hx + R * 1.05},${hy + R * 0.05} Q${hx + R * 0.98},${hy - R * 0.3} ${hx + R * 0.6},${hy - R * 0.36} Q${hx},${hy - R * 0.42} ${hx - R * 0.42},${hy - R * 0.86} L${hx - R * 0.55},${hy - R * 0.58} Q${hx - R * 0.88},${hy - R * 0.5} ${hx - R * 1.03},${hy + R * 0.05} Z`} />
+          <path d={`M${hx - R * 0.42},${hy - R * 0.86} Q${hx - R * 0.44},${hy - R * 1.0} ${hx - R * 0.38},${hy - R * 1.08}`} stroke={c.ink} strokeWidth={c.sw * 0.6} fill="none" strokeLinecap="round" />
+        </g>
+      );
+    case "quiff":
+      return (
+        <g>
+          <path {...f} d={capBase(0.62, -0.05)} />
+          <path {...f} d={`M${hx - R * 0.62},${hy - R * 0.62} Q${hx - R * 0.45},${hy - R * 1.6} ${hx + R * 0.55},${hy - R * 1.42} Q${hx + R * 0.95},${hy - R * 1.32} ${hx + R * 0.72},${hy - R * 1.02} Q${hx + R * 0.35},${hy - R * 1.15} ${hx + R * 0.35},${hy - R * 0.72} Z`} />
+        </g>
+      );
+    case "undercut":
+      return (
+        <g>
+          <path d={capBase(0.3, 0.05)} fill={c.hair} fillOpacity={0.35} stroke="none" />
+          <path {...f} d={`M${hx - R * 0.78},${hy - R * 0.5} Q${hx - R * 0.9},${hy - R * 1.25} ${hx},${hy - R * 1.3} Q${hx + R * 1.0},${hy - R * 1.3} ${hx + R * 1.12},${hy - R * 0.62} Q${hx + R * 0.5},${hy - R * 0.85} ${hx + R * 0.1},${hy - R * 0.6} Q${hx - R * 0.35},${hy - R * 0.72} ${hx - R * 0.78},${hy - R * 0.5} Z`} />
+        </g>
+      );
+    case "messy": {
+      let d = `M${hx - R * 1.04},${hy + R * 0.08} C${hx - R * 1.15},${hy - R * 1.3} ${hx + R * 1.15},${hy - R * 1.3} ${hx + R * 1.04},${hy + R * 0.08}`;
+      const tips = [0.95, 0.62, 0.3, -0.02, -0.35, -0.68, -0.98];
+      tips.forEach((x, i) => { d += ` L${hx + R * x},${hy - R * (i % 2 ? 0.28 : 0.5)}`; });
+      d += " Z";
+      return (
+        <g>
+          <path {...f} d={d} />
+          <path d={`M${hx - R * 0.2},${hy - R * 1.05} q${R * 0.15},${-R * 0.35} ${R * 0.35},${-R * 0.25} M${hx + R * 0.35},${hy - R * 1.0} q${R * 0.2},${-R * 0.25} ${R * 0.4},${-R * 0.1}`} {...f} fill="none" />
+        </g>
+      );
+    }
+    case "curtains":
+      return (
+        <g>
+          <path {...f} d={`M${hx - R * 1.05},${hy + R * 0.2} C${hx - R * 1.15},${hy - R * 1.52} ${hx + R * 1.15},${hy - R * 1.52} ${hx + R * 1.05},${hy + R * 0.2} Q${hx + R * 0.75},${hy - R * 0.2} ${hx + R * 0.08},${hy - R * 0.78} L${hx - R * 0.08},${hy - R * 0.78} Q${hx - R * 0.75},${hy - R * 0.2} ${hx - R * 1.05},${hy + R * 0.2} Z`} />
+          <path d={`M${hx},${hy - R * 0.8} L${hx},${hy - R * 1.08}`} stroke={c.ink} strokeWidth={c.sw * 0.6} strokeLinecap="round" />
+        </g>
+      );
+    case "mohawk": {
+      let d = `M${hx - R * 0.28},${hy - R * 0.85}`;
+      for (let i = 0; i <= 5; i++) {
+        const t = i / 5, x = hx - R * 0.28 + R * 0.56 * t;
+        d += ` L${x - R * 0.04},${hy - R * (1.5 + 0.1 * Math.sin(t * 3.14))} L${x + R * 0.06},${hy - R * 1.02}`;
+      }
+      d += ` L${hx + R * 0.28},${hy - R * 0.85} Z`;
+      return (
+        <g>
+          <path d={capBase(0.4, 0)} fill={c.hair} fillOpacity={0.28} stroke="none" />
+          <path {...f} d={d} />
+        </g>
+      );
+    }
+    case "wavy":
+      return (
+        <g>
+          <path {...f} d={`M${hx - R * 1.08},${hy + R * 0.45} C${hx - R * 1.2},${hy - R * 1.6} ${hx + R * 1.2},${hy - R * 1.6} ${hx + R * 1.08},${hy + R * 0.45} q${-R * 0.12},${-R * 0.2} ${-R * 0.05},${-R * 0.42} q${-R * 0.15},${-R * 0.12} ${-R * 0.1},${-R * 0.35} Q${hx + R * 0.4},${hy - R * 0.52} ${hx},${hy - R * 0.62} Q${hx - R * 0.45},${hy - R * 0.45} ${hx - R * 0.78},${hy - R * 0.32} q${R * 0.05},${R * 0.23} ${-R * 0.1},${R * 0.35} q${R * 0.07},${R * 0.22} ${-R * 0.2},${R * 0.42} Z`} />
+          <path d={`M${hx - R * 0.5},${hy - R * 0.95} q${R * 0.2},${-R * 0.15} ${R * 0.4},0 t${R * 0.4},0`} stroke={c.ink} strokeWidth={c.sw * 0.6} fill="none" strokeLinecap="round" />
+        </g>
+      );
+    case "afro":
+      return <path {...f} d={`M${hx - R * 1.0},${hy - R * 0.1} C${hx - R * 1.05},${hy - R * 1.45} ${hx + R * 1.05},${hy - R * 1.45} ${hx + R * 1.0},${hy - R * 0.1} Q${hx + R * 0.7},${hy - R * 0.5} ${hx + R * 0.35},${hy - R * 0.52} Q${hx},${hy - R * 0.62} ${hx - R * 0.35},${hy - R * 0.52} Q${hx - R * 0.7},${hy - R * 0.5} ${hx - R * 1.0},${hy - R * 0.1} Z`} />;
+    case "manbun":
+      return <path {...f} d={capBase(0.55, 0.05)} />;
+    case "receding":
+      return (
+        <path {...f} d={`M${hx - R * 1.03},${hy + R * 0.05} C${hx - R * 1.1},${hy - R * 1.45} ${hx + R * 1.1},${hy - R * 1.45} ${hx + R * 1.03},${hy + R * 0.05} Q${hx + R * 0.95},${hy - R * 0.5} ${hx + R * 0.62},${hy - R * 0.62} Q${hx + R * 0.45},${hy - R * 0.92} ${hx + R * 0.15},${hy - R * 0.82} L${hx},${hy - R * 0.68} L${hx - R * 0.15},${hy - R * 0.82} Q${hx - R * 0.45},${hy - R * 0.92} ${hx - R * 0.62},${hy - R * 0.62} Q${hx - R * 0.95},${hy - R * 0.5} ${hx - R * 1.03},${hy + R * 0.05} Z`} />
+      );
     case "long":
     case "braid":
     case "bob":
@@ -379,6 +463,16 @@ function HeadAccessories({ dna, head: [hx, hy], R, c }: { dna: CharacterDNA; hea
         </g>
       )}
       {a.has("mustache") && <path d={`M${hx - R * 0.32},${hy + R * 0.42} Q${hx - R * 0.1},${hy + R * 0.22} ${hx + R * 0.06},${hy + R * 0.34} Q${hx + R * 0.22},${hy + R * 0.22} ${hx + R * 0.44},${hy + R * 0.42} Q${hx + R * 0.06},${hy + R * 0.48} ${hx - R * 0.32},${hy + R * 0.42} Z`} fill={c.hair} stroke={c.ink} strokeWidth={sw * 0.6} />}
+      {a.has("stubble") && (
+        <g fill={c.hair} opacity={0.55}>
+          {Array.from({ length: 26 }, (_, i) => {
+            const t = i / 25, ang = Math.PI * (0.12 + 0.76 * t);
+            const rr = R * (0.78 + (i % 3) * 0.06);
+            return <circle key={i} cx={hx + Math.cos(ang) * rr} cy={hy + R * 0.1 + Math.sin(ang) * rr * 0.92} r={R * 0.03} />;
+          })}
+        </g>
+      )}
+      {a.has("goatee") && <path d={`M${hx - R * 0.18},${hy + R * 0.66} Q${hx},${hy + R * 0.6} ${hx + R * 0.18},${hy + R * 0.66} Q${hx + R * 0.14},${hy + R * 1.0} ${hx},${hy + R * 1.05} Q${hx - R * 0.14},${hy + R * 1.0} ${hx - R * 0.18},${hy + R * 0.66} Z`} fill={c.hair} stroke={c.ink} strokeWidth={c.sw * 0.6} />}
       {a.has("beard") && <path d={`M${hx - R * 0.9},${hy + R * 0.3} Q${hx},${hy + R * 1.55} ${hx + R * 0.9},${hy + R * 0.3} Q${hx + R * 0.5},${hy + R * 0.95} ${hx},${hy + R * 0.98} Q${hx - R * 0.5},${hy + R * 0.95} ${hx - R * 0.9},${hy + R * 0.3} Z`} fill={c.hair} stroke={c.ink} strokeWidth={sw * 0.7} />}
       {a.has("blush") && (
         <g fill={c.t.id === "line-sketch" ? "#d9a0a0" : c.t.accent} opacity={0.3}>

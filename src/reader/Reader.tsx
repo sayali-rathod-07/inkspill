@@ -8,6 +8,7 @@ import { PAPERS } from "../doodle/theme.ts";
 import { playRustle } from "../lib/rustle.ts";
 import { MusicDock } from "./MusicDock.tsx";
 import { toEmbed } from "../lib/embed.ts";
+import { designVars } from "./design.ts";
 import { safeLink } from "../doodle/sanitize.ts";
 
 export function usePagination(book: Book | null, opts: PaginateOpts = {}, delay = 350) {
@@ -53,7 +54,8 @@ export function Reader({ book, pages, chapterStart, toolbarExtra, onChapter, sid
   const narrow = useNarrow();
   const [modePref, setModePref] = useState<"auto" | "book" | "scroll">(() => (store.get("ink.mode") as "auto") ?? "auto");
   const mode = modePref === "auto" ? (narrow ? "scroll" : "book") : modePref;
-  const [paper, setPaper] = useState<PaperId>(book.paper);
+  // "author" shows the book exactly as its author designed it; a preset overrides it for this reader.
+  const [paper, setPaper] = useState<PaperId | "author">("author");
   // Page-turn volume 0–1 (0 = off). Starts fairly quiet; remembered per browser.
   const [vol, setVol] = useState(() => {
     const v = store.get("ink.vol");
@@ -64,9 +66,8 @@ export function Reader({ book, pages, chapterStart, toolbarExtra, onChapter, sid
   const [playing, setPlaying] = useState<{ url: string; title: string } | null>(null);
   const [lightbox, setLightbox] = useState<string | "cast" | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
-  const view = useMemo(() => ({ ...book, paper }), [book, paper]);
+  const view = useMemo(() => (paper === "author" ? book : { ...book, paper, design: undefined }), [book, paper]);
 
-  useEffect(() => setPaper(book.paper), [book.paper]);
   useEffect(() => store.set("ink.vol", String(vol)), [vol]);
   useEffect(() => store.set("ink.mode", modePref), [modePref]);
 
@@ -85,7 +86,8 @@ export function Reader({ book, pages, chapterStart, toolbarExtra, onChapter, sid
           <button className={mode === "book" ? "on" : ""} onClick={() => setModePref("book")} title="Two-page spreads">📖 Book</button>
           <button className={mode === "scroll" ? "on" : ""} onClick={() => setModePref("scroll")} title="Webtoon scroll">📜 Scroll</button>
         </div>
-        <select value={paper} onChange={(e) => setPaper(e.target.value as PaperId)} title="Paper">
+        <select value={paper} onChange={(e) => setPaper(e.target.value as PaperId | "author")} title="Page colours">
+          <option value="author">✦ Author's colours</option>
           {Object.values(PAPERS).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <div className="vol-wrap">
@@ -269,7 +271,7 @@ function Scroll({ book, chapterIds, handlers, onChapter, jumpRef: jr }: {
   }, [onChapter, chapters.length]);
 
   return (
-    <div className={`scroll-read paper-${book.paper}`} ref={ref}>
+    <div className={`scroll-read paper-${book.paper}`} ref={ref} style={designVars(book)}>
       <div className="paper-grain" />
       <header className="scroll-cover">
         {cover && <DoodleSvg doodle={cover} cast={book.characters} />}

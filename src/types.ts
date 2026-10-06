@@ -1,7 +1,7 @@
 // Shared data model — imported by both the web app and the server.
 
 export type ThemeId = "storybook" | "purple-ink" | "sunday-strip" | "line-sketch" | "watercolor";
-export type PaperId = "lavender" | "cream" | "newsprint" | "parchment";
+export type PaperId = "lavender" | "cream" | "white" | "mint" | "sky" | "blush" | "newsprint" | "parchment" | "night";
 
 export const POSES = ["stand", "wave", "armsUp", "point", "run", "hold", "sit", "fall", "shrug", "hug"] as const;
 export type Pose = (typeof POSES)[number];
@@ -11,7 +11,10 @@ export const EXPRESSIONS = [
 ] as const;
 export type Expression = (typeof EXPRESSIONS)[number];
 
-export const HAIR_STYLES = ["short", "spiky", "long", "ponytail", "bun", "braid", "bob", "curly", "bald", "balding"] as const;
+export const HAIR_STYLES = [
+  "short", "crew", "sidepart", "quiff", "undercut", "messy", "curtains", "spiky", "mohawk", "wavy", "afro", "manbun", "receding",
+  "long", "ponytail", "bun", "braid", "bob", "curly", "bald", "balding",
+] as const;
 export type HairStyle = (typeof HAIR_STYLES)[number];
 
 export const OUTFITS = ["tshirt", "shirt", "kurta", "saree", "dress", "hoodie", "uniform", "salwar"] as const;
@@ -22,7 +25,7 @@ export type Age = (typeof AGES)[number];
 
 export const ACCESSORIES = [
   "glasses", "mustache", "beard", "bindi", "bandaid", "halo", "horns", "earrings", "cap", "tie",
-  "backpack", "baldspot", "scar", "blush", "freckles", "necklace", "watch", "dupatta",
+  "backpack", "baldspot", "scar", "blush", "freckles", "necklace", "watch", "dupatta", "stubble", "goatee",
 ] as const;
 export type Accessory = (typeof ACCESSORIES)[number];
 
@@ -165,6 +168,14 @@ export interface CastMap {
 
 export type TrimId = "5x8" | "5.5x8.5" | "6x9" | "7x10" | "8.5x8.5";
 
+export interface BookDesign {
+  page?: string;
+  text?: string;
+  accent?: string;
+  cover?: string;
+  coverText?: string;
+}
+
 export interface PublicUser { id: string; username: string; displayName: string }
 
 export interface Book {
@@ -186,6 +197,8 @@ export interface Book {
   doodles: Record<string, Doodle>;
   cast: CastMap;
   coverDoodleId?: string;
+  /** Author's own page & cover colours (on top of the paper preset). */
+  design?: BookDesign;
   /** Optional soundtrack (Spotify or YouTube link) readers can play while reading. */
   music?: { url: string; title: string };
   updatedAt: number;

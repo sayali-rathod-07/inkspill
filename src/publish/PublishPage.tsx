@@ -9,6 +9,10 @@ import { download } from "../lib/fonts.ts";
 import { buildEpub } from "./epub.ts";
 import { bookWords, setBookTheme, timeAgo } from "../lib/util.ts";
 import { toEmbed } from "../lib/embed.ts";
+import { ColorField } from "../studio/Inspector.tsx";
+import { BookPage } from "../reader/BookPage.tsx";
+import type { Page } from "../reader/paginate.ts";
+import type { BookDesign } from "../types.ts";
 import { useNavigate } from "react-router-dom";
 
 const PAPER_STOCK = {
@@ -70,6 +74,8 @@ export function PublishPage() {
 
       <VisibilityCard />
 
+      <BookColoursCard />
+
       <section className="pub-card">
         <h3>📕 Book details</h3>
         <div className="row2">
@@ -80,7 +86,7 @@ export function PublishPage() {
         <label>Dedication <span className="muted small">(optional page in the front matter)</span><textarea rows={2} value={book.dedication} onChange={(e) => update((b) => { b.dedication = e.target.value; })} /></label>
         <div className="row3">
           <label>Doodle style<select value={book.theme} onChange={(e) => update((b) => setBookTheme(b, e.target.value as ThemeId))}>{THEME_LIST.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>Paper<select value={book.paper} onChange={(e) => update((b) => { b.paper = e.target.value as PaperId; })}>{Object.values(PAPERS).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+          <label>Page colours<select value={book.paper} onChange={(e) => update((b) => { b.paper = e.target.value as PaperId; delete b.design; })}>{Object.values(PAPERS).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
           <label>Trim size<select value={book.trim} onChange={(e) => update((b) => { b.trim = e.target.value as TrimId; })}>{Object.entries(TRIMS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></label>
         </div>
         <label>Cover art<select value={book.coverDoodleId ?? ""} onChange={(e) => update((b) => { b.coverDoodleId = e.target.value || undefined; })}>
@@ -171,6 +177,57 @@ function StatsCard() {
           <p className="muted small">A reader is one person on one browser — the same friend on phone and laptop counts twice. No names or personal data are stored.</p>
         </>
       )}
+    </section>
+  );
+}
+
+function BookColoursCard() {
+  const book = useStore((s) => s.book)!;
+  const update = useStore((s) => s.update);
+  const preset = PAPERS[book.paper] ?? PAPERS.cream;
+  const d = book.design ?? {};
+  const set = (k: keyof BookDesign, v?: string) => update((b) => {
+    const next = { ...(b.design ?? {}), [k]: v };
+    if (!v) delete next[k];
+    b.design = Object.keys(next).length ? next : undefined;
+  });
+  const ch = book.chapters[0];
+  const sample: Page = {
+    kind: "text", num: 7, chapterId: ch?.id, chapterNum: 1, chapterTitle: ch?.title ?? "Chapter One",
+    items: [
+      { t: "head", num: 1, title: ch?.title ?? "Chapter One" },
+      { t: "p", blockId: "s1", text: ch?.blocks.filter((b) => b.type === "text").map((b) => b.text).join(" ").slice(0, 900) || "Once upon a chaotic time…", drop: true },
+    ],
+  };
+  const cover: Page = { kind: "cover", num: 1, items: [] };
+  return (
+    <section className="pub-card colours-card">
+      <h3>🎨 Book colours</h3>
+      <p>Choose the colours of your pages and cover. Readers see your colours (they can still switch to another paper in the reader if they like).</p>
+      <div className="lbl">Start from a colour set</div>
+      <div className="paper-grid">
+        {Object.values(PAPERS).map((p) => (
+          <button key={p.id} className={`paper-tile ${book.paper === p.id && !book.design ? "on" : ""}`} onClick={() => update((b) => { b.paper = p.id; delete b.design; })} title={p.name}>
+            <span className="pt-cover" style={{ background: p.cover, color: p.coverText }}>Aa</span>
+            <span className="pt-page" style={{ background: p.color, color: p.ink }}><i style={{ background: p.accent }} />text</span>
+            <b>{p.name}</b>
+          </button>
+        ))}
+      </div>
+      <div className="colours-grid">
+        <div>
+          <div className="lbl">Make it yours {book.design && <button className="link" onClick={() => update((b) => { delete b.design; })}>reset to {preset.name}</button>}</div>
+          <ColorField label="Page colour" value={d.page ?? preset.color} options={["#ffffff", "#fdfaf3", "#f8f1e1", "#eaf6ef", "#eaf2fb", "#fbecef", "#f3edfa", "#fff6d6", "#1e1c27", "#14213d"]} onPick={(c) => set("page", c)} onReset={d.page ? () => set("page") : undefined} />
+          <ColorField label="Text colour" value={d.text ?? preset.ink} options={["#1f1f24", "#2c241b", "#1b2738", "#33202a", "#2b2140", "#3a2c1a", "#ebe6f5", "#ffffff"]} onPick={(c) => set("text", c)} onReset={d.text ? () => set("text") : undefined} />
+          <ColorField label="Highlights (drop caps, chapter numbers, captions)" value={d.accent ?? preset.accent} onPick={(c) => set("accent", c)} onReset={d.accent ? () => set("accent") : undefined} />
+          <ColorField label="Cover colour" value={d.cover ?? preset.cover} onPick={(c) => set("cover", c)} onReset={d.cover ? () => set("cover") : undefined} />
+          <ColorField label="Cover title colour" value={d.coverText ?? preset.coverText} options={["#ffffff", "#fff4dc", "#ffd27a", "#1d1b2e", "#2c241b"]} onPick={(c) => set("coverText", c)} onReset={d.coverText ? () => set("coverText") : undefined} />
+        </div>
+        <div className="colours-preview" aria-label="Preview">
+          <div className="cp-page"><div style={{ transform: "scale(0.36)", transformOrigin: "0 0" }}><BookPage page={cover} book={book} side="right" /></div></div>
+          <div className="cp-page"><div style={{ transform: "scale(0.36)", transformOrigin: "0 0" }}><BookPage page={sample} book={book} side="left" /></div></div>
+        </div>
+      </div>
     </section>
   );
 }
