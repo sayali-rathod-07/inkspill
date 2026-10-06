@@ -711,3 +711,9 @@ code { background: var(--sun-soft); }
 .colours-preview { display: flex; flex-direction: column; gap: 10px; }
 .cp-page { width: calc(480px * 0.36); height: calc(720px * 0.36); overflow: hidden; border-radius: 4px; border: 1.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
 @media (max-width: 600px) { .colours-grid { grid-template-columns: 1fr; } .colours-preview { flex-direction: row; } }
+.lp-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; position: sticky; top: 0; z-index: 3; background: #fffaf2; padding: 6px 0; }
+.lp-head > span { flex: 1; }
+.lp-paper { flex-direction: row; align-items: center; gap: 6px; margin: 0; }
+.lp-paper select { width: auto; padding: 4px 8px; font-size: 12.5px; }
+.lp-dot { width: 18px; height: 18px; border-radius: 50%; border: 3px solid; flex: none; }
+.lp-more { font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; }

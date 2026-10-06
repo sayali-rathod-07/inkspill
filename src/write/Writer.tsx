@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import type { Block, BlockType, Book, Chapter } from "../types.ts";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import type { Block, BlockType, Book, Chapter, PaperId } from "../types.ts";
+import { PAPERS } from "../doodle/theme.ts";
 import { useStore } from "../store.ts";
 import { Outliner } from "./Outliner.tsx";
 import { PolishPanel } from "./PolishPanel.tsx";
@@ -337,7 +338,20 @@ function LivePreview({ book, ch }: { book: Book; ch: Chapter }) {
   }, [g.W]);
   return (
     <div className="live-preview" ref={wrap}>
-      <div className="lp-head">Live pages · {res?.pages.length ?? "…"} pages · {book.trim}"</div>
+      <div className="lp-head">
+        <span>Live pages · {res?.pages.length ?? "…"} pages</span>
+        <label className="lp-paper" title="Page colours for the whole book">
+          <span className="lp-dot" style={{ background: book.design?.page ?? PAPERS[book.paper]?.color, borderColor: book.design?.accent ?? PAPERS[book.paper]?.accent }} />
+          <select value={book.design ? "custom" : book.paper} onChange={(e) => {
+            if (e.target.value === "custom") return;
+            useStore.getState().update((b) => { b.paper = e.target.value as PaperId; delete b.design; });
+          }}>
+            {book.design && <option value="custom">✦ Your custom colours</option>}
+            {Object.values(PAPERS).map((p) => <option key={p.id} value={p.id}>{p.name} pages</option>)}
+          </select>
+        </label>
+        <Link to={`/book/${book.id}/publish`} className="lp-more">More colours →</Link>
+      </div>
       {res?.pages.map((p, i) => (
         <div key={i} className="lp-page" style={{ width: g.W * scale, height: g.H * scale }}>
           <div style={{ transform: `scale(${scale})`, transformOrigin: "0 0" }}>
