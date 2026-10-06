@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Book, PublicUser } from "./types.ts";
 import { api } from "./lib/api.ts";
+import { orderChaptersByPart } from "./lib/util.ts";
 
 type SaveState = "saved" | "dirty" | "saving" | "error";
 
@@ -52,6 +53,7 @@ export const useStore = create<Store>((set, get) => ({
     if (!cur) return;
     const next = structuredClone(cur);
     fn(next);
+    orderChaptersByPart(next);
     set({ book: next, save: "dirty" });
     clearTimeout(timer);
     timer = setTimeout(() => void get().flush(), 900);

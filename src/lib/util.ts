@@ -4,6 +4,20 @@ import type { Book, Chapter, ThemeId } from "../types.ts";
 export const uid = (n = 8) => nanoid(n);
 
 /**
+ * Keep chapters in outline order: all of Part One's chapters, then Part Two's, and so on.
+ * Chapter numbers come from this order. Order within a part is preserved.
+ */
+export function orderChaptersByPart(b: Book) {
+  const rank = new Map(b.parts.map((p, i) => [p.id, i]));
+  const fallback = b.parts.length;
+  const sorted = b.chapters
+    .map((c, i) => ({ c, i, r: rank.get(c.partId) ?? fallback }))
+    .sort((x, y) => x.r - y.r || x.i - y.i)
+    .map((x) => x.c);
+  if (sorted.some((c, i) => c !== b.chapters[i])) b.chapters = sorted;
+}
+
+/**
  * Change the book's drawing style. Doodles that were following the book's style move with it;
  * doodles you deliberately gave a different style keep theirs.
  */

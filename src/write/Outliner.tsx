@@ -63,9 +63,9 @@ export function Outliner({ book, activeId, onOpen, onScene }: { book: Book; acti
 
   const addChapter = (partId: string) => {
     const id = uid(8);
+    // Append to this part; the store keeps chapters in part order, so numbering follows the outline.
     update((b) => {
-      const lastIdx = b.chapters.map((c) => c.partId).lastIndexOf(partId);
-      b.chapters.splice(lastIdx + 1, 0, { id, partId, title: "New chapter", status: "draft", blocks: [{ id: uid(8), type: "text", text: "" }] });
+      b.chapters.push({ id, partId, title: "New chapter", status: "draft", blocks: [{ id: uid(8), type: "text", text: "" }] });
     });
     onOpen(id);
   };
