@@ -130,3 +130,5 @@ All are optional for local use. See `.env.example`. Never commit your real `.env
 ## AI Usage
 
 AI coding assistants were used during development for code generation, debugging and documentation, as allowed by the project guidelines. In the app itself, AI (Gemini/Claude) generates structured doodle scenes and writing-polish suggestions.
+
+Demo Video link - https://drive.google.com/file/d/1exXECnJXWRV-YRPlZSNx3iQS7ysrUQC8/view?usp=sharing
